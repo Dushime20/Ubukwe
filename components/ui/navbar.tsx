@@ -20,7 +20,9 @@ export function Navbar() {
     <header className="border-b bg-[#eff4fa]   z-10 top-0 sticky">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <div className="h-8 w-8 rounded-full bg-primary"></div>
+          <div className="h-12 w-12 rounded-full">
+            <img src="/logo.png" alt="Ubukwe Logo" className="h-full w-full object-cover rounded-full" />
+          </div>
           <span className="text-xl font-bold text-foreground">Ubukwe</span>
           <Badge variant="secondary" className="text-xs">
             Rwanda

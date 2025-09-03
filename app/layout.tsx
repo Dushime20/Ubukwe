@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   description:
     "Connect with authentic Rwandan wedding service providers for traditional dancers, MCs, decorations, catering, and venues.",
   generator: "v0.app",
+  icons: {
+    icon: '/favicon.ico',
+  },
 }
 
 export default function RootLayout({
