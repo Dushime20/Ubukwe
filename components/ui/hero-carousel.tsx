@@ -51,14 +51,14 @@ export function HeroCarousel() {
 
   if (!mounted) {
     return (
-      <div className="image-content w-1/2">
-        <img src="/ababyinyi.jpeg" alt="Hero Image" className="w-full h-auto rounded-4xl" />
+      <div className="image-content w-full">
+        <img src="/ababyinyi.jpeg" alt="Hero Image" className="w-full h-auto rounded-2xl md:rounded-4xl" />
       </div>
     );
   }
 
   return (
-    <div className="image-content w-1/2">
+    <div className="image-content w-full">
       <Swiper
         modules={[Autoplay, EffectFade, Navigation, Pagination]}
         effect="fade"
@@ -72,8 +72,8 @@ export function HeroCarousel() {
           clickable: true,
           dynamicBullets: true,
         }}
-        className="hero-swiper rounded-4xl overflow-hidden shadow-2xl"
-        style={{ height: '400px' }}
+        className="hero-swiper rounded-2xl md:rounded-4xl overflow-hidden shadow-2xl"
+        style={{ height: '300px', minHeight: '300px' }}
       >
         {heroImages.map((image, index) => (
           <SwiperSlide key={index}>
@@ -89,9 +89,9 @@ export function HeroCarousel() {
                   }
                 }}
               />
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-6 rounded-b-4xl">
-                <h3 className="text-white font-bold text-xl mb-2">{image.title}</h3>
-                <p className="text-white/90 text-base">{image.description}</p>
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-3 md:p-6 rounded-b-2xl md:rounded-b-4xl">
+                <h3 className="text-white font-bold text-sm md:text-xl mb-1 md:mb-2">{image.title}</h3>
+                <p className="text-white/90 text-xs md:text-base">{image.description}</p>
               </div>
             </div>
           </SwiperSlide>

@@ -65,33 +65,39 @@ export default function HomePage() {
       {/* Header */}
   <Navbar/>
       {/* Hero Section */}
-      <section className="py-20 px-4 flex items-center justify-between">
-  <div className="text-content w-1/2">
-    <div className="container mx-auto text-center max-w-4xl">
-      <h1 className="text-4xl md:text-6xl font-bold text-balance mb-6">
-        Celebrate <span className="text-primary">Your  Wedding</span> with Authentic Cultural Services
-      </h1>
-      <p className="text-xl text-muted-foreground text-balance mb-8 max-w-2xl mx-auto">
-        Connect with trusted service providers who understand and honor Rwandan wedding traditions. From traditional
-        dancers to authentic cuisine, plan your perfect celebration.
-      </p>
-      <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        <Link href="/services">
-          <Button size="lg" className="text-lg px-8 bg-[#111828]">
-            Find Services
-          </Button>
-        </Link>
-        <Link href="/auth/signup">
-          <Button variant="outline" size="lg" className="text-lg px-8 bg-transparent">
-            Become a Provider
-          </Button>
-        </Link>
-      </div>
-    </div>
-  </div>
-  {/* image section */}
-  <HeroCarousel />
-</section>
+      <section className="py-12 md:py-20 px-4">
+        <div className="container  mx-4 max-w-7xl">
+          <div className="flex flex-col lg:flex-row items-center gap-2">
+            {/* Text Content */}
+            <div className="text-content w-full lg:w-1/2 text-center lg:text-left ">
+              <h1 className="text-1xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-balance mb-4 md:mb-6 leading-tight">
+               Your trusted partner<span className="text-primary"> for Your weddings</span>
+              </h1>
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground text-balance mb-6 md:mb-8 max-w-2xl mx-auto lg:mx-0">
+                Bringing together tradition, culture, and modern convenience — Ubukwe Management 
+                System makes planning your big day stress-free.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center lg:justify-start">
+                <Link href="/services" className="w-full sm:w-auto">
+                  <Button size="lg" className="text-base md:text-lg px-6 md:px-8 bg-[#111828] w-full sm:w-auto">
+                    Find Services
+                  </Button>
+                </Link>
+                <Link href="/auth/signup" className="w-full sm:w-auto">
+                  <Button variant="outline" size="lg" className="text-base md:text-lg px-6 md:px-8 bg-transparent w-full sm:w-auto">
+                    Become a Provider
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            
+            {/* Image Section */}
+            <div className="w-full lg:w-1/2 h-full">
+              <HeroCarousel />
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* How It Works */}
       <section id="how-it-works" className="py-16 px-4 bg-secondary/30">
