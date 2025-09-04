@@ -10,9 +10,9 @@ export const metadata: Metadata = {
   title: "Ubukwe - Rwandan Wedding Services Platform",
   description:
     "Connect with authentic Rwandan wedding service providers for traditional dancers, MCs, decorations, catering, and venues.",
-  generator: "v0.app",
+ 
   icons: {
-    icon: '/favicon.ico',
+    icon: { url: '/favicon.ico', type: 'image/x-icon' },
   },
 }
 
@@ -23,6 +23,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+      </head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <Suspense fallback={null}>{children}</Suspense>
         <Analytics />

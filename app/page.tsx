@@ -61,12 +61,12 @@ export default function HomePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#eff4fa] ">
+    <div className="min-h-screen bg-[#eff4fa]">
       {/* Header */}
   <Navbar/>
       {/* Hero Section */}
-      <section className="py-12 md:py-20 px-4">
-        <div className="container  mx-4 max-w-7xl">
+      <section className="py-12 md:py-20  mx-4">
+        <div className="container   max-w-7xl">
           <div className="flex flex-col lg:flex-row items-center gap-2">
             {/* Text Content */}
             <div className="text-content w-full lg:w-1/2 text-center lg:text-left ">
@@ -77,7 +77,7 @@ export default function HomePage() {
                 Bringing together tradition, culture, and modern convenience — Ubukwe Management 
                 System makes planning your big day stress-free.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center lg:justify-start">
+              <div className="flex  sm:flex-row gap-3 md:gap-4 justify-center lg:justify-start">
                 <Link href="/services" className="w-full sm:w-auto">
                   <Button size="lg" className="text-base md:text-lg px-6 md:px-8 bg-[#111828] w-full sm:w-auto">
                     Find Services
@@ -92,7 +92,7 @@ export default function HomePage() {
             </div>
             
             {/* Image Section */}
-            <div className="w-full lg:w-1/2 h-full">
+            <div className="w-full lg:w-1/2 ">
               <HeroCarousel />
             </div>
           </div>
