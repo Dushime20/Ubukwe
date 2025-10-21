@@ -3,13 +3,21 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, Search, Menu, Home, CheckCircle, Star, BookOpen, DollarSign, ChevronLeft } from "lucide-react";
+import { Heart, MessageCircle, Search, Menu, Home, CheckCircle, Star, BookOpen, DollarSign, ChevronLeft, Users, Clock, MapPin, Camera } from "lucide-react";
 import { DashboardSidebar } from "@/components/ui/dashboard-sidebar";
 import { Overview } from "@/components/dashboard/overview";
 import { Planning } from "@/components/dashboard/planning";
 import { Services } from "@/components/dashboard/services";
 import { Bookings } from "@/components/dashboard/bookings";
 import { Budget } from "@/components/dashboard/budget";
+import { ComprehensivePlanning } from "@/components/dashboard/comprehensive-planning";
+import { VendorMarketplace } from "@/components/dashboard/vendor-marketplace";
+import { GuestManagement } from "@/components/dashboard/guest-management";
+import { VenueManagement } from "@/components/dashboard/venue-management";
+import { MessagesHub } from "@/components/dashboard/messages-hub";
+import { WeddingInspiration } from "@/components/dashboard/wedding-inspiration";
+import { PhotographyBooking } from "@/components/dashboard/photography-booking";
+import { ComingSoon } from "@/components/ui/coming-soon";
 
 export default function CustomerDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -118,17 +126,32 @@ export default function CustomerDashboard() {
           />
         );
 
-      case "planning":
-        return <Planning checklist={checklist} />;
+      case "vendors":
+        return <VendorMarketplace />;
 
-      case "services":
-        return <Services recommendedServices={recommendedServices} />;
+      case "planning":
+        return <ComprehensivePlanning />;
+
+      case "guests":
+        return <GuestManagement />;
+
+      case "venue":
+        return <VenueManagement />;
 
       case "bookings":
         return <Bookings bookings={bookings} />;
 
       case "budget":
         return <Budget weddingDetails={weddingDetails} />;
+
+      case "messages":
+        return <MessagesHub />;
+
+      case "inspiration":
+        return <WeddingInspiration />;
+
+      case "photography":
+        return <PhotographyBooking />;
 
       default:
         return null;
@@ -175,29 +198,68 @@ export default function CustomerDashboard() {
                 </Button>
               </div>
               
-              <nav className="space-y-2">
+              <nav className="space-y-4">
                 {[
-                  { id: "overview", label: "Overview", icon: <Home className="w-4 h-4" /> },
-                  { id: "planning", label: "Planning", icon: <CheckCircle className="w-4 h-4" /> },
-                  { id: "services", label: "Services", icon: <Star className="w-4 h-4" /> },
-                  { id: "bookings", label: "My Bookings", icon: <BookOpen className="w-4 h-4" /> },
-                  { id: "budget", label: "Budget", icon: <DollarSign className="w-4 h-4" /> },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => {
-                      setActiveTab(tab.id);
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className={`w-full text-left text-sm px-4 py-3 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
-                      activeTab === tab.id
-                        ? "bg-primary text-primary-foreground shadow-md transform scale-105"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50 hover:shadow-sm"
-                    }`}
-                  >
-                    <span className="w-5 h-5">{tab.icon}</span>
-                    <span className="font-medium">{tab.label}</span>
-                  </button>
+                  {
+                    title: "Overview",
+                    items: [
+                      { id: "overview", label: "Dashboard", icon: <Home className="w-4 h-4" /> },
+                    ]
+                  },
+                  {
+                    title: "Planning",
+                    items: [
+                      { id: "planning", label: "Planning & Timeline", icon: <CheckCircle className="w-4 h-4" /> },
+                      { id: "guests", label: "Guest Management", icon: <Users className="w-4 h-4" /> },
+                    ]
+                  },
+                  {
+                    title: "Services & Vendors",
+                    items: [
+                      { id: "vendors", label: "Find Vendors", icon: <Star className="w-4 h-4" /> },
+                      { id: "venue", label: "Venue & Location", icon: <MapPin className="w-4 h-4" /> },
+                      { id: "photography", label: "Photography", icon: <Camera className="w-4 h-4" /> },
+                    ]
+                  },
+                  {
+                    title: "Management",
+                    items: [
+                      { id: "bookings", label: "My Bookings", icon: <BookOpen className="w-4 h-4" /> },
+                      { id: "budget", label: "Budget & Payments", icon: <DollarSign className="w-4 h-4" /> },
+                      { id: "messages", label: "Messages", icon: <MessageCircle className="w-4 h-4" /> },
+                    ]
+                  },
+                  {
+                    title: "Inspiration",
+                    items: [
+                      { id: "inspiration", label: "Wedding Ideas", icon: <Heart className="w-4 h-4" /> },
+                    ]
+                  }
+                ].map((group, groupIndex) => (
+                  <div key={group.title} className="space-y-2">
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3">
+                      {group.title}
+                    </h3>
+                    <div className="space-y-1">
+                      {group.items.map((tab) => (
+                        <button
+                          key={tab.id}
+                          onClick={() => {
+                            setActiveTab(tab.id);
+                            setIsMobileMenuOpen(false);
+                          }}
+                          className={`w-full text-left text-sm px-4 py-2.5 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
+                            activeTab === tab.id
+                              ? "bg-primary text-primary-foreground shadow-md transform scale-[1.02]"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50 hover:shadow-sm"
+                          }`}
+                        >
+                          <span className="w-4 h-4">{tab.icon}</span>
+                          <span className="font-medium">{tab.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </nav>
 
