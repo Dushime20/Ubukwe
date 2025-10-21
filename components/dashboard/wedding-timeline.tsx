@@ -175,7 +175,11 @@ export function WeddingTimeline({ weddingDate, coupleName }: WeddingTimelineProp
                       <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                         <div className="flex items-center space-x-1">
                           <Calendar className="h-4 w-4" />
-                          <span>{new Date(event.date).toLocaleDateString()}</span>
+                          <span>{new Date(event.date).toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}</span>
                         </div>
                         <div className="flex items-center space-x-1">
                           <Clock className="h-4 w-4" />
@@ -215,7 +219,11 @@ export function WeddingTimeline({ weddingDate, coupleName }: WeddingTimelineProp
                       <Badge variant="secondary">{event.category}</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Completed on {new Date(event.date).toLocaleDateString()}
+                      Completed on {new Date(event.date).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
                     </p>
                   </div>
                 </div>

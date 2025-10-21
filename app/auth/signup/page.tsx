@@ -19,6 +19,8 @@ interface FormErrors {
   password?: string
   confirmPassword?: string
   phone?: string
+  dateOfBirth?: string
+  gender?: string
 }
 
 export default function SignUpPage() {
@@ -29,6 +31,8 @@ export default function SignUpPage() {
     password: "",
     confirmPassword: "",
     phone: "",
+    dateOfBirth: "",
+    gender: "" as "male" | "female" | "other" | "",
     role: "customer" as "customer" | "provider",
   })
   
@@ -81,6 +85,21 @@ export default function SignUpPage() {
       newErrors.phone = 'Please enter a valid phone number (e.g., +250788123456)'
     }
 
+    if (!formData.dateOfBirth) {
+      newErrors.dateOfBirth = 'Date of birth is required'
+    } else {
+      const birthDate = new Date(formData.dateOfBirth)
+      const today = new Date()
+      const age = today.getFullYear() - birthDate.getFullYear()
+      if (age < 18) {
+        newErrors.dateOfBirth = 'You must be at least 18 years old'
+      }
+    }
+
+    if (!formData.gender) {
+      newErrors.gender = 'Please select your gender'
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -99,6 +118,8 @@ export default function SignUpPage() {
       password: formData.password,
       confirmPassword: formData.confirmPassword,
       phone: formData.phone || undefined,
+      dateOfBirth: formData.dateOfBirth || undefined,
+      gender: formData.gender as "male" | "female" | "other" | undefined,
       role: formData.role,
     }
 
@@ -286,6 +307,52 @@ export default function SignUpPage() {
                   </div>
                   {errors.confirmPassword && (
                     <p className="text-sm text-red-500">{errors.confirmPassword}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                  <Input
+                    id="dateOfBirth"
+                    type="date"
+                    value={formData.dateOfBirth}
+                    onChange={(e) => {
+                      setFormData({ ...formData, dateOfBirth: e.target.value })
+                      if (errors.dateOfBirth) {
+                        setErrors(prev => ({ ...prev, dateOfBirth: undefined }))
+                      }
+                    }}
+                    className={errors.dateOfBirth ? 'border-red-500' : ''}
+                    disabled={isRegistering}
+                  />
+                  {errors.dateOfBirth && (
+                    <p className="text-sm text-red-500">{errors.dateOfBirth}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="gender">Gender</Label>
+                  <select
+                    id="gender"
+                    value={formData.gender}
+                    onChange={(e) => {
+                      setFormData({ ...formData, gender: e.target.value as "male" | "female" | "other" })
+                      if (errors.gender) {
+                        setErrors(prev => ({ ...prev, gender: undefined }))
+                      }
+                    }}
+                    className={`w-full px-3 py-2 border rounded-md bg-background ${errors.gender ? 'border-red-500' : 'border-input'} ${isRegistering ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={isRegistering}
+                  >
+                    <option value="">Select gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                  {errors.gender && (
+                    <p className="text-sm text-red-500">{errors.gender}</p>
                   )}
                 </div>
               </div>

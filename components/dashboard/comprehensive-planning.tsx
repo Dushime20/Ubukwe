@@ -611,9 +611,17 @@ export function ComprehensivePlanning() {
               <h4 className="font-medium mb-2">Timeline Preview</h4>
               <div className="text-sm text-muted-foreground space-y-1">
                 <p><strong>Couple:</strong> {timelineSettings.coupleName}</p>
-                <p><strong>Wedding Date:</strong> {new Date(timelineSettings.weddingDate).toLocaleDateString()}</p>
+                <p><strong>Wedding Date:</strong> {new Date(timelineSettings.weddingDate).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}</p>
                 <p><strong>Days Until Wedding:</strong> {Math.ceil((new Date(timelineSettings.weddingDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24))} days</p>
-                <p><strong>Planning Started:</strong> {new Date(timelineSettings.planningStartDate).toLocaleDateString()}</p>
+                <p><strong>Planning Started:</strong> {new Date(timelineSettings.planningStartDate).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}</p>
               </div>
             </div>
             <div className="flex justify-end space-x-2 pt-4">
@@ -720,7 +728,11 @@ export function ComprehensivePlanning() {
                         <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                           <div className="flex items-center space-x-1">
                             <Calendar className="w-4 h-4" />
-                            <span>{new Date(task.dueDate).toLocaleDateString()}</span>
+                            <span>{new Date(task.dueDate).toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'long', 
+                              day: 'numeric' 
+                            })}</span>
                           </div>
                           <div className="flex items-center space-x-1">
                             <Clock className="w-4 h-4" />

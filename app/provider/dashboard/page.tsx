@@ -28,6 +28,7 @@ import {
 } from "lucide-react"
 import { DashboardSidebar } from "@/components/ui/dashboard-sidebar";
 import { DashboardHeader } from "@/components/ui/dashboard-header";
+import { useAuth } from "@/hooks/useAuth";
 import { ProviderTabsSidebar } from "@/components/ui/provider-tabs-sidebar";
 import { ProviderOverview } from "@/components/provider/overview";
 import { ProviderServices } from "@/components/provider/services";
@@ -39,6 +40,7 @@ export default function ProviderDashboard() {
   const [activeTab, setActiveTab] = useState("overview")
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { user, logout } = useAuth()
 
   // Mock data - in real app this would come from API
   const providerStats = {
@@ -166,13 +168,20 @@ export default function ProviderDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Desktop Sidebar */}
       <ProviderTabsSidebar 
         activeTab={activeTab} 
         onTabChange={setActiveTab}
         isCollapsed={isSidebarCollapsed}
         onToggle={toggleSidebar}
+        user={user ? {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          avatar: user.profilePicture
+        } : undefined}
+        onLogout={logout}
       />
 
       {/* Mobile Sidebar Overlay */}
@@ -238,7 +247,7 @@ export default function ProviderDashboard() {
       )}
 
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-48'}`}>
+      <div className={`flex-1 flex flex-col transition-all duration-300 overflow-x-hidden ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
         {/* Sticky Header */}
         <header className="sticky top-0 z-40 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 p-4 shadow-sm">
           <div className="flex items-center justify-between">
@@ -280,7 +289,7 @@ export default function ProviderDashboard() {
             </div>
           </div>
         </header>
-        <div className="flex-1 p-4 md:p-8">
+        <div className="flex-1 p-4 md:p-8 max-w-full overflow-x-hidden">
           {renderContent()}
         </div>
       </div>

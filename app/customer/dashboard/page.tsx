@@ -18,11 +18,13 @@ import { MessagesHub } from "@/components/dashboard/messages-hub";
 import { WeddingInspiration } from "@/components/dashboard/wedding-inspiration";
 import { PhotographyBooking } from "@/components/dashboard/photography-booking";
 import { ComingSoon } from "@/components/ui/coming-soon";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function CustomerDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   // Mock wedding data
   const weddingDetails = {
@@ -175,6 +177,13 @@ export default function CustomerDashboard() {
         userRole="Customer"
         isCollapsed={isSidebarCollapsed}
         onToggle={toggleSidebar}
+        user={user ? {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          avatar: user.profilePicture
+        } : undefined}
+        onLogout={logout}
       />
 
       {/* Mobile Sidebar Overlay */}
@@ -279,7 +288,7 @@ export default function CustomerDashboard() {
       )}
 
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-48'}`}>
+      <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
         {/* Sticky Header */}
         <header className="sticky top-0 z-40 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 p-4 shadow-sm">
           <div className="flex items-center justify-between">
@@ -305,7 +314,11 @@ export default function CustomerDashboard() {
                 <div>
                   <h1 className="text-lg md:text-xl font-semibold">{weddingDetails.coupleName}</h1>
                   <p className="text-xs md:text-sm text-muted-foreground">
-                    Wedding: {new Date(weddingDetails.weddingDate).toLocaleDateString()}
+                    Wedding: {new Date(weddingDetails.weddingDate).toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
                   </p>
                 </div>
               </div>

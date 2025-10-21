@@ -40,11 +40,13 @@ import { AdminProviders } from "@/components/admin/providers";
 import { AdminBookingsMetrics } from "@/components/admin/bookings";
 import { AdminDisputes } from "@/components/admin/disputes";
 import { AdminAnalytics } from "@/components/admin/analytics";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview")
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { user, logout } = useAuth()
 
   // Mock admin data
   const platformStats = {
@@ -216,6 +218,13 @@ export default function AdminDashboard() {
         onTabChange={setActiveTab}
         isCollapsed={isSidebarCollapsed}
         onToggle={toggleSidebar}
+        user={user ? {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          avatar: user.profilePicture
+        } : undefined}
+        onLogout={logout}
       />
 
       {/* Mobile Sidebar Overlay */}
@@ -282,7 +291,7 @@ export default function AdminDashboard() {
       )}
 
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-48'}`}>
+      <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
         {/* Sticky Header */}
         <header className="sticky top-0 z-40 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 p-4 shadow-sm">
           <div className="flex items-center justify-between">

@@ -388,7 +388,11 @@ export default function BookingPage({ params }: { params: { serviceId: string } 
                     {bookingData.date && (
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Date:</span>
-                        <span>{new Date(bookingData.date).toLocaleDateString()}</span>
+                        <span>{new Date(bookingData.date).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}</span>
                       </div>
                     )}
                     {bookingData.time && (
