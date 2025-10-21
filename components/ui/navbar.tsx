@@ -67,22 +67,20 @@ export function Navbar() {
         )}
       </div>
       {isMobile && menuOpen && (
-        <nav className="flex flex-col items-start space-y-2 mt-2 px-4 gap-4">
-         
-          <a href="/" className="text-muted-foreground hover:text-foreground transition-colors">
+        <nav className="flex flex-row items-center justify-start space-x-4 mt-2 px-4 py-2 overflow-x-auto">
+          <a href="/" className="text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap">
             Home
           </a>
-        
-         <a href="/services" className="text-muted-foreground hover:text-foreground transition-colors">
+          <a href="/services" className="text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap">
             Services
           </a>
-          <a href="/about" className="text-muted-foreground hover:text-foreground transition-colors">
+          <a href="/about" className="text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap">
             About
           </a>
-          <Link href="/auth/signin" className="text-muted-foreground hover:text-foreground transition-colors">
+          <Link href="/auth/signin" className="text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap">
             Sign In
           </Link>
-          <Link href="/auth/signup" className="text-muted-foreground hover:text-foreground transition-colors">
+          <Link href="/auth/signup" className="text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap">
             Register
           </Link>
         </nav>
