@@ -168,7 +168,7 @@ export default function ProviderDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <div className="min-h-screen bg-background flex">
       {/* Desktop Sidebar */}
       <ProviderTabsSidebar 
         activeTab={activeTab} 
@@ -247,9 +247,9 @@ export default function ProviderDashboard() {
       )}
 
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 overflow-x-hidden ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
+      <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
         {/* Sticky Header */}
-        <header className="sticky top-0 z-40 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 p-4 shadow-sm">
+        <header className="sticky top-0 z-40 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 p-4 shadow-sm w-full">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button
@@ -289,7 +289,7 @@ export default function ProviderDashboard() {
             </div>
           </div>
         </header>
-        <div className="flex-1 p-4 md:p-8 max-w-full overflow-x-hidden">
+        <div className="flex-1 p-4 md:p-8 overflow-y-auto">
           {renderContent()}
         </div>
       </div>

@@ -58,7 +58,7 @@ export function WeddingInspiration() {
       isBookmarked: false,
       photographer: "Jean Baptiste Photography",
       venue: "Kigali Cultural Center",
-      colorPalette: ["#8B4513", "#DAA520", "#228B22", "#FFFFFF"]
+      colorPalette: ["#660033", "#DAA520", "#228B22", "#FFFFFF"]
     },
     {
       id: "2",
@@ -99,7 +99,7 @@ export function WeddingInspiration() {
       views: 4560,
       isBookmarked: true,
       photographer: "Rwandan Arts Photography",
-      colorPalette: ["#8B0000", "#FFD700", "#000000", "#FFFFFF"]
+      colorPalette: ["#660033", "#FFD700", "#000000", "#FFFFFF"]
     },
     {
       id: "5",
@@ -113,7 +113,7 @@ export function WeddingInspiration() {
       isBookmarked: false,
       photographer: "Mountain View Studio",
       venue: "Musanze Resort",
-      colorPalette: ["#228B22", "#8B4513", "#87CEEB", "#FFFFFF"]
+      colorPalette: ["#228B22", "#660033", "#87CEEB", "#FFFFFF"]
     },
     {
       id: "6",
@@ -126,7 +126,7 @@ export function WeddingInspiration() {
       views: 2230,
       isBookmarked: false,
       photographer: "Cultural Fashion Studio",
-      colorPalette: ["#8B4513", "#DAA520", "#8B0000", "#FFFFFF"]
+      colorPalette: ["#660033", "#DAA520", "#660033", "#FFFFFF"]
     }
   ];
 
