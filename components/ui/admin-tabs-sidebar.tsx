@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Home, Users, Briefcase, BookOpen, ShieldAlert, BarChart3, ChevronLeft, ChevronRight, LogOut } from "lucide-react";
+import { Home, Users, Briefcase, BookOpen, ShieldAlert, BarChart3, ChevronLeft, ChevronRight, LogOut, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface AdminTabsSidebarProps {
@@ -43,8 +43,40 @@ export function AdminTabsSidebar({ activeTab, onTabChange, isCollapsed = false, 
     }
   ];
 
+  const initialExpanded = React.useMemo(() => {
+    const state: Record<string, boolean> = {};
+    for (const group of navigationGroups) state[group.title] = true;
+    return state;
+  }, []);
+
+  const [expandedGroups, setExpandedGroups] = React.useState<Record<string, boolean>>(() => {
+    if (typeof window === 'undefined') return initialExpanded;
+    try {
+      const saved = window.localStorage.getItem('adminSidebarExpanded');
+      return saved ? JSON.parse(saved) : initialExpanded;
+    } catch {
+      return initialExpanded;
+    }
+  });
+
+  const toggleGroup = (title: string) => {
+    setExpandedGroups((prev) => ({ ...prev, [title]: !prev[title] }));
+  };
+
+  React.useEffect(() => {
+    try {
+      window.localStorage.setItem('adminSidebarExpanded', JSON.stringify(expandedGroups));
+    } catch {}
+  }, [expandedGroups]);
+
+  const groupIconByTitle: Record<string, React.ReactNode> = {
+    "Overview": <Home className="w-4 h-4" />,
+    "User Management": <Users className="w-4 h-4" />,
+    "Platform": <BarChart3 className="w-4 h-4" />,
+  };
+
   return (
-    <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-card border-r h-screen p-3 left-0 fixed shadow-sm transition-all duration-300 z-50 hidden md:flex flex-col overflow-x-hidden`}>
+    <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white border-r h-screen p-3 left-0 fixed shadow-sm transition-all duration-300 z-50 hidden md:flex flex-col overflow-x-hidden`}>
       {/* Toggle Button */}
       <div className="mb-8 flex items-center justify-between flex-shrink-0">
         {!isCollapsed && (
@@ -68,38 +100,48 @@ export function AdminTabsSidebar({ activeTab, onTabChange, isCollapsed = false, 
           <div key={group.title} className="space-y-1">
             {/* Group Title */}
             {!isCollapsed && (
-              <div className="px-3 py-2">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.title)}
+                className="w-full px-3 py-2 flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground"
+                aria-expanded={expandedGroups[group.title]}
+              >
+                <span className="flex items-center gap-2">
+                  <span className="text-foreground/80">{groupIconByTitle[group.title] || null}</span>
                   {group.title}
-                </h3>
-              </div>
+                </span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${expandedGroups[group.title] ? '' : '-rotate-90'}`} />
+              </button>
             )}
             
             {/* Group Items */}
-            <div className="space-y-1">
-              {group.items.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => onTabChange(tab.id)}
-                  className={`w-full text-left text-sm px-3 py-2.5 rounded-lg transition-all duration-200 flex items-center ${
-                    isCollapsed ? 'justify-center' : 'space-x-3'
-                  } ${
-                    activeTab === tab.id
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50 hover:shadow-sm"
-                  }`}
-                  title={isCollapsed ? tab.label : undefined}
-                >
-                  <span className="w-4 h-4 flex-shrink-0">{tab.icon}</span>
-                  {!isCollapsed && <span className="font-medium truncate">{tab.label}</span>}
-                </button>
-              ))}
+            <div className={`space-y-1`}>
+              {group.items.map((tab) => {
+                const isActive = activeTab === tab.id;
+                const content = (
+                  <button
+                    key={tab.id}
+                    onClick={() => onTabChange(tab.id)}
+                    className={`relative group w-full text-left text-sm px-3 py-2.5 rounded-md transition-all duration-200 flex items-center ${
+                      isCollapsed ? 'justify-center' : 'gap-3'
+                    } ${
+                      isActive
+                        ? 'bg-muted text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 hover:shadow-sm'
+                    }`}
+                    title={isCollapsed ? tab.label : undefined}
+                  >
+                    <span className={`absolute left-0 top-2 bottom-2 w-1 rounded-full ${isActive ? 'bg-primary' : 'bg-transparent'}`} />
+                    <span className="w-4 h-4 flex-shrink-0">{tab.icon}</span>
+                    {!isCollapsed && <span className="font-medium truncate">{tab.label}</span>}
+                  </button>
+                );
+                if (isCollapsed) return content;
+                return expandedGroups[group.title] ? content : null;
+              })}
             </div>
             
-            {/* Separator (except for last group) */}
-            {groupIndex < navigationGroups.length - 1 && !isCollapsed && (
-              <div className="border-t border-border/50 mx-3"></div>
-            )}
+            
           </div>
         ))}
       </nav>

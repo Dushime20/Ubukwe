@@ -10,6 +10,8 @@ import { Users, Music, Utensils, MapPin, Palette, Mic, Star, Search } from "luci
 import Link from "next/link"
 import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/ui/footer"
+import { ServiceSchema } from "@/components/schemas/service-schema"
+import { EmptyState } from "@/components/ui/empty-state"
 
 export default function ServicesPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -199,21 +201,44 @@ export default function ServicesPage() {
         </div>
 
         {filteredServices.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No services found matching your criteria.</p>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setSearchTerm("")
-                setSelectedCategory("all")
-              }}
-              className="mt-4"
-            >
-              Clear Filters
-            </Button>
-          </div>
+          <EmptyState
+            title="No services found"
+            description="Try adjusting your search filters or browse all services."
+            icon={<Search className="h-12 w-12 mx-auto text-muted-foreground" />}
+            action={
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSearchTerm("")
+                  setSelectedCategory("all")
+                }}
+              >
+                Clear Filters
+              </Button>
+            }
+          />
         )}
       </div>
+      
+      {/* Schema.org markup for services */}
+      {filteredServices.map((service) => (
+        <ServiceSchema
+          key={service.id}
+          service={{
+            id: service.id,
+            title: service.title,
+            provider: service.provider,
+            description: service.description,
+            price: service.price,
+            rating: service.rating,
+            reviews: service.reviews,
+            location: service.location,
+            category: service.category,
+            image: service.image,
+          }}
+        />
+      ))}
+      
       <Footer/>
     </div>
   )

@@ -286,19 +286,39 @@ export function ComprehensivePlanning() {
 
   const handleAddTask = () => {
     if (newTask.title && newTask.dueDate) {
-      const task: PlanningTask = {
-        id: Date.now().toString(),
-        title: newTask.title!,
-        description: newTask.description || "",
-        category: newTask.category || "Venue",
-        priority: newTask.priority as any || "medium",
-        dueDate: newTask.dueDate!,
-        completed: false,
-        estimatedDuration: newTask.estimatedDuration || "",
-        assignedTo: newTask.assignedTo,
-        notes: newTask.notes
-      };
-      setTasks([...tasks, task]);
+      if (editingTask) {
+        // Update existing task
+        setTasks(tasks.map(task => 
+          task.id === editingTask
+            ? {
+                ...task,
+                title: newTask.title!,
+                description: newTask.description || "",
+                category: newTask.category || "Venue",
+                priority: newTask.priority as any || "medium",
+                dueDate: newTask.dueDate!,
+                estimatedDuration: newTask.estimatedDuration || "",
+                assignedTo: newTask.assignedTo,
+                notes: newTask.notes
+              }
+            : task
+        ));
+      } else {
+        // Add new task
+        const task: PlanningTask = {
+          id: Date.now().toString(),
+          title: newTask.title!,
+          description: newTask.description || "",
+          category: newTask.category || "Venue",
+          priority: newTask.priority as any || "medium",
+          dueDate: newTask.dueDate!,
+          completed: false,
+          estimatedDuration: newTask.estimatedDuration || "",
+          assignedTo: newTask.assignedTo,
+          notes: newTask.notes
+        };
+        setTasks([...tasks, task]);
+      }
       setNewTask({
         title: "",
         description: "",
@@ -696,7 +716,29 @@ export function ComprehensivePlanning() {
             </CardContent>
           </Card>
 
+          {/* Empty State */}
+          {filteredTasks.length === 0 && (
+            <Card>
+              <CardContent className="text-center py-12">
+                <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No tasks found</h3>
+                <p className="text-muted-foreground mb-4">
+                  {searchTerm || filterCategory !== "all" || filterPriority !== "all" || filterStatus !== "all"
+                    ? "Try adjusting your filters"
+                    : "Start by adding your first planning task"}
+                </p>
+                {!searchTerm && filterCategory === "all" && filterPriority === "all" && filterStatus === "all" && (
+                  <Button onClick={() => setIsModalOpen(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add First Task
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Timeline Tasks */}
+          {filteredTasks.length > 0 && (
           <div className="space-y-3">
             {filteredTasks.map((task) => (
               <Card key={task.id} className={`hover:shadow-md transition-shadow ${
@@ -792,6 +834,7 @@ export function ComprehensivePlanning() {
               </Card>
             ))}
           </div>
+          )}
         </TabsContent>
 
         {/* Checklist View */}

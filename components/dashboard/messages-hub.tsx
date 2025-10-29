@@ -37,13 +37,16 @@ interface Message {
 
 interface Conversation {
   id: string;
+  inquiryId?: string; // Link to inquiry if exists
   vendorName: string;
+  vendorId?: string; // Vendor/provider ID
   vendorAvatar?: string;
   vendorRole: string;
   lastMessage: string;
   lastMessageTime: string;
   unreadCount: number;
   isOnline: boolean;
+  status?: "new" | "responded" | "quoted" | "booked" | "declined"; // Inquiry status
   messages: Message[];
 }
 
@@ -52,16 +55,19 @@ export function MessagesHub() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>("1");
   const [newMessage, setNewMessage] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [conversations, setConversations] = useState<Conversation[]>([
 
-  const conversations: Conversation[] = [
     {
       id: "1",
+      inquiryId: "inq-1",
+      vendorId: "vendor-1",
       vendorName: "Intore Cultural Group",
       vendorRole: "Entertainment",
       lastMessage: "Thank you for choosing us! We'll send the performance details soon.",
       lastMessageTime: "2 hours ago",
       unreadCount: 2,
       isOnline: true,
+      status: "responded",
       messages: [
         {
           id: "1",
@@ -112,12 +118,15 @@ export function MessagesHub() {
     },
     {
       id: "2",
+      inquiryId: "inq-2",
+      vendorId: "vendor-2",
       vendorName: "Kigali Serena Hotel",
       vendorRole: "Venue",
       lastMessage: "Your venue booking is confirmed for March 15th.",
       lastMessageTime: "1 day ago",
       unreadCount: 0,
       isOnline: false,
+      status: "booked",
       messages: [
         {
           id: "1",
@@ -132,12 +141,15 @@ export function MessagesHub() {
     },
     {
       id: "3",
+      inquiryId: "inq-3",
+      vendorId: "vendor-3",
       vendorName: "Rwandan Delights Catering",
       vendorRole: "Food",
       lastMessage: "We can accommodate your dietary requirements.",
       lastMessageTime: "3 days ago",
       unreadCount: 1,
       isOnline: true,
+      status: "quoted",
       messages: [
         {
           id: "1",
@@ -150,7 +162,7 @@ export function MessagesHub() {
         }
       ]
     }
-  ];
+  ]);
 
   const filteredConversations = conversations.filter(conv => {
     const matchesSearch = conv.vendorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -167,8 +179,40 @@ export function MessagesHub() {
 
   const handleSendMessage = () => {
     if (newMessage.trim() && currentConversation) {
-      // In a real app, this would send the message to the backend
-      console.log("Sending message:", newMessage);
+      const now = new Date();
+      const timestamp = now.toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      });
+      
+      const newMsg: Message = {
+        id: `${Date.now()}`,
+        sender: "You",
+        senderRole: "Customer",
+        content: newMessage.trim(),
+        timestamp,
+        isRead: false,
+        type: 'text'
+      };
+
+      // Update conversations with new message
+      setConversations(prev => prev.map(conv => {
+        if (conv.id === currentConversation.id) {
+          return {
+            ...conv,
+            messages: [...conv.messages, newMsg],
+            lastMessage: newMessage.trim(),
+            lastMessageTime: "Just now",
+          };
+        }
+        return conv;
+      }));
+
+      // In a real app, this would send the message to the backend API
+      // which would then update the inquiry and notify the provider
+      console.log("Sending message to inquiry:", currentConversation.inquiryId, newMessage);
       setNewMessage("");
     }
   };
@@ -259,6 +303,19 @@ export function MessagesHub() {
                     <Badge variant="secondary" className="text-xs">
                       {conversation.vendorRole}
                     </Badge>
+                    {conversation.status && (
+                      <Badge 
+                        variant={
+                          conversation.status === "booked" ? "default" :
+                          conversation.status === "quoted" ? "outline" :
+                          conversation.status === "responded" ? "secondary" :
+                          conversation.status === "declined" ? "destructive" : "default"
+                        }
+                        className="text-xs"
+                      >
+                        {conversation.status}
+                      </Badge>
+                    )}
                     {conversation.unreadCount > 0 && (
                       <Badge variant="default" className="text-xs">
                         {conversation.unreadCount}
@@ -307,16 +364,21 @@ export function MessagesHub() {
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  <Button variant="outline" size="sm">
+                  {currentConversation.inquiryId && (
+                    <Badge variant="outline" className="text-xs mr-2">
+                      Inquiry #{currentConversation.inquiryId}
+                    </Badge>
+                  )}
+                  <Button variant="outline" size="sm" title="Call">
                     <Phone className="w-4 h-4" />
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" title="Email">
                     <Mail className="w-4 h-4" />
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" title="View Vendor Profile">
                     <Star className="w-4 h-4" />
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" title="More Options">
                     <MoreVertical className="w-4 h-4" />
                   </Button>
                 </div>

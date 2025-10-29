@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, MessageCircle, Search, Menu, Home, CheckCircle, Star, BookOpen, DollarSign, ChevronLeft, Users, Clock, MapPin, Camera } from "lucide-react";
@@ -9,22 +10,44 @@ import { Overview } from "@/components/dashboard/overview";
 import { Planning } from "@/components/dashboard/planning";
 import { Services } from "@/components/dashboard/services";
 import { Bookings } from "@/components/dashboard/bookings";
-import { Budget } from "@/components/dashboard/budget";
+import BudgetAnlyo from "@/components/dashboard/budget-anlyo";
 import { ComprehensivePlanning } from "@/components/dashboard/comprehensive-planning";
 import { VendorMarketplace } from "@/components/dashboard/vendor-marketplace";
 import { GuestManagement } from "@/components/dashboard/guest-management";
-import { VenueManagement } from "@/components/dashboard/venue-management";
 import { MessagesHub } from "@/components/dashboard/messages-hub";
 import { WeddingInspiration } from "@/components/dashboard/wedding-inspiration";
-import { PhotographyBooking } from "@/components/dashboard/photography-booking";
 import { ComingSoon } from "@/components/ui/coming-soon";
 import { useAuth } from "@/hooks/useAuth";
+import { CustomerQuotes } from "@/components/customer/quotes";
+import { CustomerContractsView } from "@/components/customer/contracts-view";
+import { CustomerDisputesView } from "@/components/customer/disputes-view";
+import { ReviewForm } from "@/components/reviews/review-form";
+import { CustomerBookingWizard } from "@/components/customer/booking-wizard";
+import { CustomerContractSign } from "@/components/customer/contract-sign";
 
 export default function CustomerDashboard() {
-  const [activeTab, setActiveTab] = useState("overview");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabFromUrl = searchParams.get("tab") || "overview";
+  
+  const [activeTab, setActiveTab] = useState(tabFromUrl);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, logout } = useAuth();
+
+  // Sync URL with activeTab
+  useEffect(() => {
+    const currentTab = searchParams.get("tab") || "overview";
+    if (currentTab !== activeTab) {
+      setActiveTab(currentTab);
+    }
+  }, [searchParams, activeTab]);
+
+  // Update URL when tab changes
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    router.push(`/customer/dashboard?tab=${tab}`, { scroll: false });
+  };
 
   // Mock wedding data
   const weddingDetails = {
@@ -137,14 +160,11 @@ export default function CustomerDashboard() {
       case "guests":
         return <GuestManagement />;
 
-      case "venue":
-        return <VenueManagement />;
-
       case "bookings":
         return <Bookings bookings={bookings} />;
 
       case "budget":
-        return <Budget weddingDetails={weddingDetails} />;
+        return <BudgetAnlyo />;
 
       case "messages":
         return <MessagesHub />;
@@ -152,8 +172,23 @@ export default function CustomerDashboard() {
       case "inspiration":
         return <WeddingInspiration />;
 
-      case "photography":
-        return <PhotographyBooking />;
+      case "quotes":
+        return <CustomerQuotes />;
+
+      case "contracts":
+        return <CustomerContractsView />;
+
+      case "contract-sign":
+        return <CustomerContractSign />;
+
+      case "disputes":
+        return <CustomerDisputesView />;
+
+      case "reviews":
+        return <ReviewForm bookingId="BK-2024-001" serviceName="Traditional Dancers" providerName="Intore Cultural Group" />;
+
+      case "booking":
+        return <CustomerBookingWizard />;
 
       default:
         return null;
@@ -169,11 +204,11 @@ export default function CustomerDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#f9fafc]">
       {/* Desktop Sidebar */}
       <DashboardSidebar 
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         userRole="Customer"
         isCollapsed={isSidebarCollapsed}
         onToggle={toggleSidebar}
@@ -226,8 +261,6 @@ export default function CustomerDashboard() {
                     title: "Services & Vendors",
                     items: [
                       { id: "vendors", label: "Find Vendors", icon: <Star className="w-4 h-4" /> },
-                      { id: "venue", label: "Venue & Location", icon: <MapPin className="w-4 h-4" /> },
-                      { id: "photography", label: "Photography", icon: <Camera className="w-4 h-4" /> },
                     ]
                   },
                   {
@@ -254,7 +287,7 @@ export default function CustomerDashboard() {
                         <button
                           key={tab.id}
                           onClick={() => {
-                            setActiveTab(tab.id);
+                            handleTabChange(tab.id);
                             setIsMobileMenuOpen(false);
                           }}
                           className={`w-full text-left text-sm px-4 py-2.5 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
@@ -290,7 +323,7 @@ export default function CustomerDashboard() {
       {/* Main Content */}
       <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
         {/* Sticky Header */}
-        <header className="sticky top-0 z-40 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 p-4 shadow-sm">
+        <header className="sticky top-0 z-40 border-b bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button

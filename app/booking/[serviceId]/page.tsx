@@ -21,6 +21,7 @@ export default function BookingPage({ params }: { params: { serviceId: string } 
     contactName: "",
     contactPhone: "",
     contactEmail: "",
+    acceptedContract: false,
   })
 
   // Mock service data - in real app this would be fetched based on serviceId
@@ -67,8 +68,12 @@ export default function BookingPage({ params }: { params: { serviceId: string } 
     setCurrentStep(4) // Go to confirmation
   }
 
+  const availableTimeslots = ["09:00", "11:00", "13:00", "15:00", "17:00"]
+
+  const isDateAvailable = (date: string) => service.availability.includes(date)
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#f9fafc]">
       {/* Header */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4">
@@ -152,22 +157,33 @@ export default function BookingPage({ params }: { params: { serviceId: string } 
                     <div className="space-y-4">
                       <div className="grid md:grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="date">Wedding Date</Label>
-                          <Input
+                          <Label htmlFor="date">Wedding Date (Available only)</Label>
+                          <select
                             id="date"
-                            type="date"
                             value={bookingData.date}
                             onChange={(e) => handleInputChange("date", e.target.value)}
-                          />
+                            className="w-full h-10 px-3 rounded-md border bg-white text-sm"
+                          >
+                            <option value="" disabled>Select available date</option>
+                            {service.availability.map((d) => (
+                              <option key={d} value={d}>{new Date(d).toLocaleDateString()}</option>
+                            ))}
+                          </select>
                         </div>
                         <div>
                           <Label htmlFor="time">Preferred Time</Label>
-                          <Input
+                          <select
                             id="time"
-                            type="time"
                             value={bookingData.time}
                             onChange={(e) => handleInputChange("time", e.target.value)}
-                          />
+                            className="w-full h-10 px-3 rounded-md border bg-white text-sm"
+                            disabled={!bookingData.date}
+                          >
+                            <option value="" disabled>Select time</option>
+                            {availableTimeslots.map((t) => (
+                              <option key={t} value={t}>{t}</option>
+                            ))}
+                          </select>
                         </div>
                       </div>
 
@@ -203,7 +219,7 @@ export default function BookingPage({ params }: { params: { serviceId: string } 
                       </div>
                     </div>
 
-                    <Button onClick={handleNextStep} className="w-full">
+                    <Button onClick={handleNextStep} className="w-full" disabled={!bookingData.date || !isDateAvailable(bookingData.date) || !bookingData.time}>
                       Continue to Contact Details
                     </Button>
                   </CardContent>
@@ -270,11 +286,11 @@ export default function BookingPage({ params }: { params: { serviceId: string } 
                 </Card>
               )}
 
-              {/* Step 3: Payment */}
+              {/* Step 3: Payment + Contract Confirmation */}
               {currentStep === 3 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Payment Details</CardTitle>
+                    <CardTitle>Payment & Contract</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
@@ -324,11 +340,31 @@ export default function BookingPage({ params }: { params: { serviceId: string } 
                       </div>
                     </div>
 
+                    <div className="space-y-2 pt-2">
+                      <Label>Booking Contract</Label>
+                      <div className="text-sm text-muted-foreground">
+                        Review and accept the booking contract terms before completing your booking.
+                      </div>
+                      <div className="flex items-start gap-2 p-3 border rounded-md bg-white">
+                        <input
+                          id="acceptContract"
+                          type="checkbox"
+                          className="mt-1"
+                          checked={bookingData.acceptedContract}
+                          onChange={(e) => handleInputChange("acceptedContract", e.target.checked as any)}
+                        />
+                        <label htmlFor="acceptContract" className="text-sm">
+                          I agree to the booking contract and payment schedule.
+                          <button type="button" className="ml-2 underline" onClick={() => alert("Show contract preview (pending)")}>View contract</button>
+                        </label>
+                      </div>
+                    </div>
+
                     <div className="flex space-x-3">
                       <Button variant="outline" onClick={handlePrevStep} className="flex-1 bg-transparent">
                         Back
                       </Button>
-                      <Button onClick={handleBookingSubmit} className="flex-1">
+                      <Button onClick={handleBookingSubmit} className="flex-1" disabled={!bookingData.acceptedContract}>
                         Complete Booking
                       </Button>
                     </div>

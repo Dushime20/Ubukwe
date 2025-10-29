@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Users, 
@@ -25,7 +26,7 @@ import {
   Download,
   Upload
 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 interface Guest {
   id: string;
@@ -103,6 +104,11 @@ export function GuestManagement() {
     notes: ""
   });
 
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingGuestId, setEditingGuestId] = useState<string | null>(null);
+  const [editGuest, setEditGuest] = useState<Partial<Guest>>({});
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const filteredGuests = guests.filter(guest => {
     const matchesSearch = guest.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          guest.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -161,10 +167,110 @@ export function GuestManagement() {
         rsvpStatus: "pending",
         dietaryRestrictions: "",
         plusOne: false,
+        plusOneName: "",
+        tableNumber: undefined,
         notes: ""
       });
       setShowAddGuest(false);
     }
+  };
+
+  const handleOpenEdit = (guestId: string) => {
+    const g = guests.find(x => x.id === guestId);
+    if (!g) return;
+    setEditingGuestId(guestId);
+    setEditGuest({ ...g });
+    setIsEditOpen(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingGuestId || !editGuest.name || !editGuest.email) {
+      setIsEditOpen(false);
+      return;
+    }
+    setGuests(guests.map(g => g.id === editingGuestId ? {
+      ...g,
+      name: editGuest.name!,
+      email: editGuest.email!,
+      phone: editGuest.phone || "",
+      relationship: editGuest.relationship || "",
+      rsvpStatus: (editGuest.rsvpStatus as any) || g.rsvpStatus,
+      dietaryRestrictions: editGuest.dietaryRestrictions || "",
+      plusOne: !!editGuest.plusOne,
+      plusOneName: editGuest.plusOneName || "",
+      tableNumber: editGuest.tableNumber,
+      notes: editGuest.notes || "",
+    } : g));
+    setIsEditOpen(false);
+    setEditingGuestId(null);
+  };
+
+  const handleSendInvite = (guestId: string) => {
+    setGuests(guests.map(g => g.id === guestId ? { ...g, invitationSent: true, lastContacted: new Date().toISOString().split('T')[0] } : g));
+  };
+
+  const handleExportCSV = () => {
+    const header = ["id","name","email","phone","relationship","rsvpStatus","dietaryRestrictions","plusOne","plusOneName","tableNumber","notes","invitationSent","lastContacted"];
+    const rows = guests.map(g => [
+      g.id,
+      g.name,
+      g.email,
+      g.phone,
+      g.relationship,
+      g.rsvpStatus,
+      g.dietaryRestrictions,
+      g.plusOne ? "true" : "false",
+      g.plusOneName || "",
+      g.tableNumber != null ? String(g.tableNumber) : "",
+      (g.notes || "").replace(/\n/g, " ").replace(/"/g, "'"),
+      g.invitationSent ? "true" : "false",
+      g.lastContacted || ""
+    ]);
+    const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'guests.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result || "");
+      const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+      if (lines.length <= 1) return;
+      const [, ...dataLines] = lines; // skip header
+      const imported: Guest[] = dataLines.map((line) => {
+        const cols = line.match(/\"([^\"]|\"\")*\"(?=,|$)/g)?.map(s => s.slice(1, -1).replace(/\"\"/g, '"')) || [];
+        return {
+          id: cols[0] || Date.now().toString(),
+          name: cols[1] || "",
+          email: cols[2] || "",
+          phone: cols[3] || "",
+          relationship: cols[4] || "",
+          rsvpStatus: (cols[5] as any) || "pending",
+          dietaryRestrictions: cols[6] || "",
+          plusOne: (cols[7] || "").toLowerCase() === "true",
+          plusOneName: cols[8] || "",
+          tableNumber: cols[9] ? Number(cols[9]) : undefined,
+          notes: cols[10] || "",
+          invitationSent: (cols[11] || "").toLowerCase() === "true",
+          lastContacted: cols[12] || undefined,
+        };
+      }).filter(g => g.name && g.email);
+      setGuests(prev => [...prev, ...imported]);
+    };
+    reader.readAsText(file);
+    e.target.value = "";
   };
 
   const handleUpdateRSVP = (guestId: string, status: string) => {
@@ -188,11 +294,12 @@ export function GuestManagement() {
           <p className="text-muted-foreground">Manage your wedding guest list and RSVPs</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline">
+          <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleImportFileChange} />
+          <Button variant="outline" onClick={handleExportCSV}>
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleImportClick}>
             <Upload className="w-4 h-4 mr-2" />
             Import
           </Button>
@@ -279,13 +386,13 @@ export function GuestManagement() {
         </CardContent>
       </Card>
 
-      {/* Add Guest Form */}
-      {showAddGuest && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Add New Guest</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+      {/* Add Guest Modal */}
+      <Dialog open={showAddGuest} onOpenChange={setShowAddGuest}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add New Guest</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="name">Full Name *</Label>
@@ -348,6 +455,27 @@ export function GuestManagement() {
                 />
                 <Label htmlFor="plusOne">Plus One</Label>
               </div>
+              {newGuest.plusOne && (
+                <div>
+                  <Label htmlFor="plusOneName">Plus One Name</Label>
+                  <Input
+                    id="plusOneName"
+                    value={newGuest.plusOneName || ""}
+                    onChange={(e) => setNewGuest({...newGuest, plusOneName: e.target.value})}
+                    placeholder="Enter plus one name"
+                  />
+                </div>
+              )}
+              <div>
+                <Label htmlFor="table">Table Number</Label>
+                <Input
+                  id="table"
+                  type="number"
+                  value={newGuest.tableNumber ?? ''}
+                  onChange={(e) => setNewGuest({...newGuest, tableNumber: e.target.value ? Number(e.target.value) : undefined})}
+                  placeholder="Optional"
+                />
+              </div>
             </div>
             <div>
               <Label htmlFor="notes">Notes</Label>
@@ -360,16 +488,30 @@ export function GuestManagement() {
               />
             </div>
             <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setShowAddGuest(false)}>
+              <Button variant="outline" onClick={() => {
+                setShowAddGuest(false);
+                setNewGuest({
+                  name: "",
+                  email: "",
+                  phone: "",
+                  relationship: "",
+                  rsvpStatus: "pending",
+                  dietaryRestrictions: "",
+                  plusOne: false,
+                  plusOneName: "",
+                  tableNumber: undefined,
+                  notes: ""
+                });
+              }}>
                 Cancel
               </Button>
               <Button onClick={handleAddGuest}>
                 Add Guest
               </Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Guest List */}
       <div className="space-y-4">
@@ -457,9 +599,18 @@ export function GuestManagement() {
                         <XCircle className="w-4 h-4" />
                       </Button>
                     </div>
-                    <Button size="sm" variant="outline">
+                    <Button size="sm" variant="outline" onClick={() => handleOpenEdit(guest.id)}>
                       <Edit className="w-4 h-4" />
                     </Button>
+                    {!guest.invitationSent ? (
+                      <Button size="sm" variant="outline" onClick={() => handleSendInvite(guest.id)}>
+                        <Mail className="w-4 h-4" />
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="outline" onClick={() => handleSendInvite(guest.id)}>
+                        <Mail className="w-4 h-4" />
+                      </Button>
+                    )}
                     <Button size="sm" variant="outline" onClick={() => handleDeleteGuest(guest.id)}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -470,6 +621,85 @@ export function GuestManagement() {
           ))}
         </div>
       </div>
+
+      {/* Edit Guest Modal */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Guest</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-name">Full Name *</Label>
+                <Input id="edit-name" value={editGuest.name || ""} onChange={(e) => setEditGuest({...editGuest, name: e.target.value})} />
+              </div>
+              <div>
+                <Label htmlFor="edit-email">Email *</Label>
+                <Input id="edit-email" type="email" value={editGuest.email || ""} onChange={(e) => setEditGuest({...editGuest, email: e.target.value})} />
+              </div>
+              <div>
+                <Label htmlFor="edit-phone">Phone</Label>
+                <Input id="edit-phone" value={editGuest.phone || ""} onChange={(e) => setEditGuest({...editGuest, phone: e.target.value})} />
+              </div>
+              <div>
+                <Label>Relationship</Label>
+                <Select value={editGuest.relationship || ""} onValueChange={(v) => setEditGuest({...editGuest, relationship: v})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select relationship" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Family">Family</SelectItem>
+                    <SelectItem value="Friend">Friend</SelectItem>
+                    <SelectItem value="Colleague">Colleague</SelectItem>
+                    <SelectItem value="Neighbor">Neighbor</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>RSVP</Label>
+                <Select value={(editGuest.rsvpStatus as any) || "pending"} onValueChange={(v) => setEditGuest({...editGuest, rsvpStatus: v as any})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="confirmed">Confirmed</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="declined">Declined</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="edit-dietary">Dietary Restrictions</Label>
+                <Input id="edit-dietary" value={editGuest.dietaryRestrictions || ""} onChange={(e) => setEditGuest({...editGuest, dietaryRestrictions: e.target.value})} />
+              </div>
+              <div className="flex items-center space-x-2">
+                <input type="checkbox" id="edit-plusOne" checked={!!editGuest.plusOne} onChange={(e) => setEditGuest({...editGuest, plusOne: e.target.checked})} />
+                <Label htmlFor="edit-plusOne">Plus One</Label>
+              </div>
+              {editGuest.plusOne && (
+                <div>
+                  <Label htmlFor="edit-plusOneName">Plus One Name</Label>
+                  <Input id="edit-plusOneName" value={editGuest.plusOneName || ""} onChange={(e) => setEditGuest({...editGuest, plusOneName: e.target.value})} />
+                </div>
+              )}
+              <div>
+                <Label htmlFor="edit-table">Table Number</Label>
+                <Input id="edit-table" type="number" value={editGuest.tableNumber ?? ''} onChange={(e) => setEditGuest({...editGuest, tableNumber: e.target.value ? Number(e.target.value) : undefined})} />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="edit-notes">Notes</Label>
+              <Textarea id="edit-notes" rows={3} value={editGuest.notes || ""} onChange={(e) => setEditGuest({...editGuest, notes: e.target.value})} />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+              <Button onClick={handleSaveEdit}>Save Changes</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

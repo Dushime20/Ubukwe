@@ -108,6 +108,10 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    font-size: 14px; /* 125% of default 16px to mimic OS display scaling */
+    -webkit-text-size-adjust: 100%;
+  }
   body {
     @apply bg-background text-foreground;
   }

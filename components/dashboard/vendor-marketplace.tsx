@@ -5,8 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Star, Search, Filter, MapPin, Phone, MessageCircle, Heart, Calendar, Users } from "lucide-react";
+import { Star, Search, Filter, MapPin, Phone, MessageCircle, Heart, Calendar, Users, Eye, Image as ImageIcon } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { VendorDetailView } from "./vendor-detail-view";
 
 interface Vendor {
   id: number;
@@ -24,10 +26,12 @@ interface Vendor {
 }
 
 export function VendorMarketplace() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [sortBy, setSortBy] = useState("rating");
+  const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
 
   const vendors: Vendor[] = [
     {
@@ -115,6 +119,15 @@ export function VendorMarketplace() {
       verified: true,
     },
   ];
+
+  const vendorIdToBookedDates: Record<number, string[]> = {
+    1: ["2024-03-20", "2024-03-25"],
+    2: ["2024-03-22"],
+    3: ["2024-03-21", "2024-03-28"],
+    4: [],
+    5: ["2024-03-20"],
+    6: ["2024-03-25"],
+  };
 
   const categories = [
     "all", "Entertainment", "Venue", "Food", "Decor", "Photography", "Transportation", "Beauty"
@@ -229,24 +242,33 @@ export function VendorMarketplace() {
       {/* Vendor Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {sortedVendors.map((vendor) => (
-          <Card key={vendor.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <CardTitle className="text-lg">{vendor.name}</CardTitle>
-                    {vendor.verified && (
-                      <Badge variant="default" className="text-xs">Verified</Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    <span>{vendor.location}</span>
-                  </div>
-                </div>
-                <Badge variant={getAvailabilityColor(vendor.availability)}>
+          <Card key={vendor.id} className="hover:shadow-lg transition-shadow overflow-hidden">
+            {/* Image Section */}
+            <div className="relative aspect-video w-full bg-gradient-to-br from-primary/20 to-primary/40 overflow-hidden">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <ImageIcon className="h-16 w-16 text-primary/50" />
+              </div>
+              <div className="absolute top-2 right-2">
+                {vendor.verified && (
+                  <Badge variant="default" className="text-xs">Verified</Badge>
+                )}
+              </div>
+              <div className="absolute bottom-2 left-2">
+                <Badge variant={getAvailabilityColor(vendor.availability)} className="text-xs">
                   {vendor.availability}
                 </Badge>
+              </div>
+            </div>
+
+            <CardHeader className="pb-3">
+              <div className="space-y-2">
+                <div className="flex items-start justify-between">
+                  <CardTitle className="text-lg">{vendor.name}</CardTitle>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  <span>{vendor.location}</span>
+                </div>
               </div>
             </CardHeader>
             
@@ -297,21 +319,33 @@ export function VendorMarketplace() {
               </div>
 
               <div className="flex items-center space-x-2 pt-2">
-                <Button size="sm" className="flex-1">
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Contact
+                <Button size="sm" className="flex-1" onClick={() => router.push(`/customer/dashboard?tab=booking&serviceId=${vendor.id}`, { scroll: false })}>
+                  Book Now
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setSelectedVendorId(vendor.id)}>
+                  <Eye className="h-4 w-4" />
                 </Button>
                 <Button variant="outline" size="sm">
                   <Heart className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Calendar className="h-4 w-4" />
                 </Button>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* Vendor Details Modal */}
+      {selectedVendorId !== null && (() => {
+        const vendor = vendors.find(v => v.id === selectedVendorId)!;
+        const bookedDates = vendorIdToBookedDates[vendor.id] || [];
+        return (
+          <VendorDetailView
+            vendor={vendor}
+            bookedDates={bookedDates}
+            onClose={() => setSelectedVendorId(null)}
+          />
+        );
+      })()}
 
       {/* No Results */}
       {sortedVendors.length === 0 && (

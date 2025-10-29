@@ -32,13 +32,13 @@ export const authApi = {
 
   // Logout user
   async logout(): Promise<ApiResponse> {
-    const refreshToken = localStorage.getItem('refreshToken');
+    const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
     return apiClient.post(API_ENDPOINTS.AUTH.LOGOUT, { refreshToken });
   },
 
   // Refresh access token
   async refreshToken(): Promise<AuthResponse> {
-    const refreshToken = localStorage.getItem('refreshToken');
+    const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
     const response = await apiClient.post<AuthResponse['data']>(
       API_ENDPOINTS.AUTH.REFRESH_TOKEN,
       { refreshToken }
@@ -91,21 +91,27 @@ export const authApi = {
 // Token management utilities
 export const tokenManager = {
   setTokens(accessToken: string, refreshToken: string): void {
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+    }
   },
 
   getAccessToken(): string | null {
+    if (typeof window === 'undefined') return null;
     return localStorage.getItem('accessToken');
   },
 
   getRefreshToken(): string | null {
+    if (typeof window === 'undefined') return null;
     return localStorage.getItem('refreshToken');
   },
 
   clearTokens(): void {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+    }
   },
 
   isAuthenticated(): boolean {
@@ -116,16 +122,21 @@ export const tokenManager = {
 // User management utilities
 export const userManager = {
   setUser(user: User): void {
-    localStorage.setItem('user', JSON.stringify(user));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user', JSON.stringify(user));
+    }
   },
 
   getUser(): User | null {
+    if (typeof window === 'undefined') return null;
     const user = localStorage.getItem('user');
     return user ? JSON.parse(user) : null;
   },
 
   clearUser(): void {
-    localStorage.removeItem('user');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user');
+    }
   },
 
   updateUser(updates: Partial<User>): void {
