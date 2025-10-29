@@ -5,11 +5,11 @@
 
 :root {
   /* Updated to Rwandan cultural color palette */
-  --background: oklch(0.98 0.01 85);
+  --background: #fffeff;
   --foreground: oklch(0.15 0.02 45);
-  --card: oklch(0.99 0.005 85);
+  --card: #fffeff;
   --card-foreground: oklch(0.15 0.02 45);
-  --popover: oklch(0.99 0.005 85);
+  --popover: #fffeff;
   --popover-foreground: oklch(0.15 0.02 45);
   --primary: oklch(0.25 0.15 350); /* Dark maroon */
   --primary-foreground: oklch(0.98 0.01 85);
@@ -30,7 +30,7 @@
   --chart-4: oklch(0.85 0.08 55);
   --chart-5: oklch(0.45 0.15 15);
   --radius: 0.75rem;
-  --sidebar: oklch(0.98 0.01 85);
+  --sidebar: #fffeff;
   --sidebar-foreground: oklch(0.15 0.02 45);
   --sidebar-primary: oklch(0.25 0.15 350);
   --sidebar-primary-foreground: oklch(0.98 0.01 85);

@@ -16,9 +16,10 @@ interface AdminTabsSidebarProps {
     avatar?: string;
   };
   onLogout?: () => void;
+  mobile?: boolean; // when true, render suitable container for mobile overlays
 }
 
-export function AdminTabsSidebar({ activeTab, onTabChange, isCollapsed = false, onToggle, user, onLogout }: AdminTabsSidebarProps) {
+export function AdminTabsSidebar({ activeTab, onTabChange, isCollapsed = false, onToggle, user, onLogout, mobile = false }: AdminTabsSidebarProps) {
   const navigationGroups = [
     {
       title: "Overview",
@@ -76,24 +77,32 @@ export function AdminTabsSidebar({ activeTab, onTabChange, isCollapsed = false, 
   };
 
   return (
-    <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white border-r h-screen p-3 left-0 fixed shadow-sm transition-all duration-300 z-50 hidden md:flex flex-col overflow-x-hidden`}>
-      {/* Toggle Button */}
-      <div className="mb-8 flex items-center justify-between flex-shrink-0">
-        {!isCollapsed && (
-          <div>
-            <h2 className="text-xl font-bold text-foreground mb-2">Admin Dashboard</h2>
-            <p className="text-sm text-muted-foreground">Platform Management</p>
-          </div>
-        )}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onToggle}
-          className="p-2 hover:bg-muted/50"
-        >
-          {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-        </Button>
-      </div>
+    <div className={
+      mobile
+        ? `w-full bg-transparent h-full p-0 shadow-none transition-all duration-300 flex md:hidden flex-col overflow-x-hidden`
+        : `${isCollapsed ? 'w-16' : 'w-64'} bg-white border-r h-screen p-3 left-0 fixed shadow-sm transition-all duration-300 z-50 hidden md:flex flex-col overflow-x-hidden`
+    }>
+      {/* Toggle Button - Hide in mobile mode */}
+      {!mobile && (
+        <div className="mb-8 flex items-center justify-between flex-shrink-0">
+          {!isCollapsed && (
+            <div>
+              <h2 className="text-xl font-bold text-foreground mb-2">Admin Dashboard</h2>
+              <p className="text-sm text-muted-foreground">Platform Management</p>
+            </div>
+          )}
+          {onToggle && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggle}
+              className="p-2 hover:bg-muted/50"
+            >
+              {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            </Button>
+          )}
+        </div>
+      )}
 
       <nav className="flex-1 overflow-y-auto space-y-4 scrollbar-hide">
         {navigationGroups.map((group, groupIndex) => (

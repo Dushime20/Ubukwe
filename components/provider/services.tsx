@@ -11,13 +11,13 @@ import { ServiceForm, ServiceFormData } from "./service-form";
 import { useRouter } from "next/navigation";
 
 interface Service {
-  id: number;
-  title: string;
-  category: string;
+    id: number;
+    title: string;
+    category: string;
   location: string;
   priceRange: string;
-  bookings: number;
-  rating: number;
+    bookings: number;
+    rating: number;
   status: "draft" | "active";
   // Extended fields matching vendor detail view
   description?: string;
@@ -167,7 +167,7 @@ export function ProviderServices({ services: initialServices }: ProviderServices
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">My Services</h2>
+        <h2 className="text-2xl font-bold">My Services</h2>
           <p className="text-muted-foreground">Manage your services that customers can browse and book</p>
         </div>
         <Button onClick={handleCreateService}>
@@ -235,52 +235,52 @@ export function ProviderServices({ services: initialServices }: ProviderServices
           </Card>
         ) : (
           filteredServices.map((service) => (
-            <Card key={service.id}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="text-lg font-semibold">{service.title}</h3>
-                      <Badge variant={service.status === "active" ? "default" : "secondary"}>
-                        {service.status}
-                      </Badge>
+          <Card key={service.id}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <h3 className="text-lg font-semibold">{service.title}</h3>
+                    <Badge variant={service.status === "active" ? "default" : "secondary"}>
+                      {service.status}
+                    </Badge>
                       {service.verified && (
                         <Badge variant="outline" className="text-xs">Verified</Badge>
                       )}
-                    </div>
+                  </div>
                     <p className="text-muted-foreground mb-2">
                       {service.category} • {service.location}
                     </p>
-                    <div className="flex items-center space-x-4 text-sm">
+                  <div className="flex items-center space-x-4 text-sm">
                       <span className="font-medium">{service.priceRange}</span>
-                      <span className="text-muted-foreground">{service.bookings} bookings</span>
+                    <span className="text-muted-foreground">{service.bookings} bookings</span>
                       {service.rating > 0 && (
-                        <div className="flex items-center">
+                    <div className="flex items-center">
                           <Star className="h-4 w-4 text-yellow-400 mr-1 fill-current" />
-                          <span>{service.rating}</span>
-                        </div>
+                      <span>{service.rating}</span>
+                    </div>
                       )}
                       {service.packages && service.packages.length > 0 && (
                         <Badge variant="outline" className="text-xs">
                           {service.packages.length} package{service.packages.length > 1 ? "s" : ""}
                         </Badge>
                       )}
-                    </div>
+                  </div>
                     {service.description && (
                       <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                         {service.description}
                       </p>
                     )}
-                  </div>
-                  <div className="flex items-center space-x-2">
+                </div>
+                <div className="flex items-center space-x-2">
                     <Button variant="outline" size="sm" onClick={() => handleViewService(service)}>
-                      <Eye className="h-4 w-4 mr-2" />
-                      View
-                    </Button>
+                    <Eye className="h-4 w-4 mr-2" />
+                    View
+                  </Button>
                     <Button variant="outline" size="sm" onClick={() => handleEditService(service)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -289,10 +289,10 @@ export function ProviderServices({ services: initialServices }: ProviderServices
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
-                  </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </CardContent>
+          </Card>
           ))
         )}
       </div>

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, Search, Menu, Home, CheckCircle, Star, BookOpen, DollarSign, ChevronLeft, Users, Clock, MapPin, Camera } from "lucide-react";
+import { Heart, MessageCircle, Search, Menu, Home, CheckCircle, Star, BookOpen, DollarSign, ChevronLeft, Users, Clock, MapPin, Camera, FileText, ShieldAlert, LogOut } from "lucide-react";
 import { DashboardSidebar } from "@/components/ui/dashboard-sidebar";
 import { Overview } from "@/components/dashboard/overview";
 import { Planning } from "@/components/dashboard/planning";
@@ -225,12 +225,12 @@ export default function CustomerDashboard() {
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="fixed inset-0 bg-black/50" onClick={toggleMobileMenu} />
-          <div className="fixed left-0 top-0 h-full w-64 bg-card border-r shadow-lg">
-            <div className="p-4">
-              <div className="mb-8 flex items-center justify-between">
+          <div className="fixed left-0 top-0 h-full w-64 bg-card border-r shadow-lg overflow-y-auto">
+            <div className="p-4 h-full flex flex-col">
+              <div className="mb-4 flex items-center justify-between flex-shrink-0">
                 <div>
-                  <h2 className="text-xl font-bold text-foreground mb-2">Dashboard</h2>
-                  <p className="text-sm text-muted-foreground">Customer Portal</p>
+                  <h2 className="text-lg font-bold text-foreground mb-1">Dashboard</h2>
+                  <p className="text-xs text-muted-foreground">Customer Portal</p>
                 </div>
                 <Button
                   variant="ghost"
@@ -242,7 +242,7 @@ export default function CustomerDashboard() {
                 </Button>
               </div>
               
-              <nav className="space-y-4">
+              <nav className="flex-1 overflow-y-auto space-y-3 pt-2">
                 {[
                   {
                     title: "Overview",
@@ -267,8 +267,12 @@ export default function CustomerDashboard() {
                     title: "Management",
                     items: [
                       { id: "bookings", label: "My Bookings", icon: <BookOpen className="w-4 h-4" /> },
-                      { id: "budget", label: "Budget & Payments", icon: <DollarSign className="w-4 h-4" /> },
+                      { id: "budget", label: "Budget Anlyo", icon: <DollarSign className="w-4 h-4" /> },
                       { id: "messages", label: "Messages", icon: <MessageCircle className="w-4 h-4" /> },
+                      { id: "quotes", label: "Quotes", icon: <FileText className="w-4 h-4" /> },
+                      { id: "contracts", label: "Contracts", icon: <FileText className="w-4 h-4" /> },
+                      { id: "disputes", label: "Disputes", icon: <ShieldAlert className="w-4 h-4" /> },
+                      { id: "reviews", label: "Reviews", icon: <Star className="w-4 h-4" /> },
                     ]
                   },
                   {
@@ -278,11 +282,11 @@ export default function CustomerDashboard() {
                     ]
                   }
                 ].map((group, groupIndex) => (
-                  <div key={group.title} className="space-y-2">
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3">
+                  <div key={group.title} className="space-y-1">
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 pb-1">
                       {group.title}
                     </h3>
-                    <div className="space-y-1">
+                    <div className="space-y-0.5">
                       {group.items.map((tab) => (
                         <button
                           key={tab.id}
@@ -290,14 +294,15 @@ export default function CustomerDashboard() {
                             handleTabChange(tab.id);
                             setIsMobileMenuOpen(false);
                           }}
-                          className={`w-full text-left text-sm px-4 py-2.5 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
+                          className={`relative w-full text-left text-sm px-3 py-2.5 rounded-md transition-all duration-200 flex items-center gap-3 ${
                             activeTab === tab.id
-                              ? "bg-primary text-primary-foreground shadow-md transform scale-[1.02]"
-                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50 hover:shadow-sm"
+                              ? "bg-muted text-foreground shadow-sm"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                           }`}
                         >
-                          <span className="w-4 h-4">{tab.icon}</span>
-                          <span className="font-medium">{tab.label}</span>
+                          <span className={`absolute left-0 top-2 bottom-2 w-1 rounded-full ${activeTab === tab.id ? 'bg-primary' : 'bg-transparent'}`} />
+                          <span className="w-4 h-4 flex-shrink-0">{tab.icon}</span>
+                          <span className="font-medium truncate">{tab.label}</span>
                         </button>
                       ))}
                     </div>
@@ -305,71 +310,94 @@ export default function CustomerDashboard() {
                 ))}
               </nav>
 
-              <div className="mt-16 pt-6 border-t">
-                <div>
-                  <button className="w-full text-left bg-black text-white text-sm px-4 py-3 rounded-lg transition-all duration-200 flex items-center space-x-3">
-                    Logout
-                  </button>
+              {user && (
+                <div className="flex-shrink-0 pt-4 border-t border-border/50 mt-4">
+                  <div className="mb-4 px-3">
+                    <div className="flex items-center p-3 rounded-lg bg-muted/30 min-w-0">
+                      <div className="flex items-center space-x-3 flex-1 min-w-0 overflow-hidden">
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-semibold text-primary flex-shrink-0">
+                          {user.firstName?.[0]}{user.lastName?.[0]}
+                        </div>
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <p className="text-sm font-medium text-foreground truncate">
+                            {user.firstName} {user.lastName}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {user.email}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (logout) logout();
+                          toggleMobileMenu();
+                        }}
+                        className="ml-2 p-1.5 rounded-md hover:bg-destructive/10 hover:text-destructive transition-all duration-200 flex-shrink-0"
+                        title="Logout"
+                      >
+                        <LogOut className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground text-center mt-5">
-                  Ubukwe Platform
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
       )}
 
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
+      <div className={`flex-1 flex flex-col transition-all duration-300 ml-0 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
         {/* Sticky Header */}
-        <header className="sticky top-0 z-40 border-b bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleMobileMenu}
-                className="p-2 hover:bg-muted/50 md:hidden"
-              >
-                <Menu className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleSidebar}
-                className="p-2 hover:bg-muted/50 hidden md:block"
-              >
-                <Menu className="h-4 w-4" />
-              </Button>
-              <div className="flex items-center space-x-2">
-                <Heart className="h-6 w-6 text-primary" />
-                <div>
-                  <h1 className="text-lg md:text-xl font-semibold">{weddingDetails.coupleName}</h1>
-                  <p className="text-xs md:text-sm text-muted-foreground">
-                    Wedding: {new Date(weddingDetails.weddingDate).toLocaleDateString('en-US', { 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
-                  </p>
+        <header className="sticky top-0 z-40 border-b bg-white shadow-sm">
+          <div className="p-3 md:p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center space-x-2 md:space-x-4 min-w-0 flex-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleMobileMenu}
+                  className="p-2 hover:bg-muted/50 md:hidden flex-shrink-0"
+                >
+                  <Menu className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleSidebar}
+                  className="p-2 hover:bg-muted/50 hidden md:block flex-shrink-0"
+                >
+                  <Menu className="h-4 w-4" />
+                </Button>
+                <div className="flex items-center space-x-2 min-w-0">
+                  <Heart className="h-5 w-5 md:h-6 md:w-6 text-primary flex-shrink-0" />
+                  <div className="min-w-0">
+                    <h1 className="text-base md:text-lg lg:text-xl font-semibold truncate">{weddingDetails.coupleName}</h1>
+                    <p className="text-xs md:text-sm text-muted-foreground truncate">
+                      {new Date(weddingDetails.weddingDate).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="flex items-center space-x-2 md:space-x-3">
-              <Button variant="outline" size="sm" className="hidden sm:flex">
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Messages
-              </Button>
-              <Button size="sm">
-                <Search className="h-4 w-4 md:mr-2" />
-                <span className="hidden md:inline">Find Services</span>
-              </Button>
+              <div className="flex items-center space-x-1 md:space-x-2 flex-shrink-0">
+                <Button variant="outline" size="sm" className="hidden sm:flex text-xs md:text-sm">
+                  <MessageCircle className="h-4 w-4 mr-1 md:mr-2" />
+                  <span className="hidden lg:inline">Messages</span>
+                </Button>
+                <Button size="sm" className="text-xs md:text-sm">
+                  <Search className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">Find Services</span>
+                </Button>
+              </div>
             </div>
           </div>
         </header>
         
-        <div className="flex-1 p-4 md:p-8">
+        <div className="flex-1 p-3 md:p-4 lg:p-6 xl:p-8 overflow-y-auto">
           {renderContent()}
         </div>
       </div>

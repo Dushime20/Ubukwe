@@ -188,96 +188,101 @@ export function AdminDashboardContent() {
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="fixed inset-0 bg-black/50" onClick={toggleMobileMenu} />
-          <div className="fixed left-0 top-0 h-full w-64 bg-card border-r shadow-lg">
-            <div className="p-4">
-              <div className="mb-8 flex items-center justify-between">
+          <div className="fixed left-0 top-0 h-full w-64 bg-card border-r shadow-lg overflow-y-auto">
+            <div className="p-4 h-full flex flex-col">
+              <div className="mb-4 flex items-center justify-between flex-shrink-0">
                 <div>
-                  <h2 className="text-xl font-bold text-foreground mb-2">Admin Dashboard</h2>
-                  <p className="text-sm text-muted-foreground">Platform Management</p>
+                  <h2 className="text-lg font-bold text-foreground mb-1">Admin Dashboard</h2>
+                  <p className="text-xs text-muted-foreground">Platform Management</p>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={toggleMobileMenu}
-                  className="p-2"
+                  className="p-2 hover:bg-muted/50"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
               </div>
-              <AdminTabsSidebar 
-                activeTab={activeTab} 
-                onTabChange={(tab) => {
-                  handleTabChange(tab)
-                  toggleMobileMenu()
-                }}
-                isCollapsed={false}
-                user={user ? {
-                  firstName: user.firstName,
-                  lastName: user.lastName,
-                  email: user.email,
-                  avatar: user.profilePicture
-                } : undefined}
-                onLogout={logout}
-              />
+              <div className="flex-1 overflow-y-auto">
+                <AdminTabsSidebar 
+                  activeTab={activeTab} 
+                  onTabChange={(tab) => {
+                    handleTabChange(tab)
+                    toggleMobileMenu()
+                  }}
+                  isCollapsed={false}
+                  mobile={true}
+                  user={user ? {
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    email: user.email,
+                    avatar: user.profilePicture
+                  } : undefined}
+                  onLogout={logout}
+                />
+              </div>
             </div>
           </div>
         </div>
       )}
 
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
+      <div className={`flex-1 flex flex-col transition-all duration-300 ml-0 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
         {/* Header */}
-        <header className="sticky top-0 z-40 border-b bg-white p-4 shadow-sm w-full" role="banner">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleMobileMenu}
-                className="p-2 hover:bg-muted/50 md:hidden"
-                aria-label="Toggle mobile menu"
-              >
-                <Menu className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleSidebar}
-                className="p-2 hover:bg-muted/50 hidden md:block"
-                aria-label="Toggle sidebar"
-              >
-                <Menu className="h-4 w-4" />
-              </Button>
-              <div className="flex items-center space-x-3">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={headerUser.avatar} alt={headerUser.name} />
-                  <AvatarFallback>{headerUser.initials}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <h1 className="text-lg md:text-xl font-semibold">{headerUser.name}</h1>
-                  <p className="text-xs md:text-sm text-muted-foreground">{headerUser.role}</p>
+        <header className="sticky top-0 z-40 border-b bg-white shadow-sm w-full" role="banner">
+          <div className="p-3 md:p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center space-x-2 md:space-x-4 min-w-0 flex-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleMobileMenu}
+                  className="p-2 hover:bg-muted/50 md:hidden flex-shrink-0"
+                  aria-label="Toggle mobile menu"
+                >
+                  <Menu className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleSidebar}
+                  className="p-2 hover:bg-muted/50 hidden md:block flex-shrink-0"
+                  aria-label="Toggle sidebar"
+                >
+                  <Menu className="h-4 w-4" />
+                </Button>
+                <div className="flex items-center space-x-2 md:space-x-3 min-w-0">
+                  <Avatar className="h-7 w-7 md:h-8 md:w-8 flex-shrink-0">
+                    <AvatarImage src={headerUser.avatar} alt={headerUser.name} />
+                    <AvatarFallback className="text-xs">{headerUser.initials}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <h1 className="text-base md:text-lg lg:text-xl font-semibold truncate">{headerUser.name}</h1>
+                    <p className="text-xs md:text-sm text-muted-foreground truncate">{headerUser.role}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="flex items-center space-x-2 md:space-x-3">
-              {headerActions.map((action, index) => (
-                <Button 
-                  key={index} 
-                  variant={action.variant} 
-                  size="sm" 
-                  className={index === 0 ? "hidden sm:flex" : ""} 
-                  aria-label={action.label}
-                >
-                  {action.icon}
-                  <span className="hidden md:inline">{action.label}</span>
-                </Button>
-              ))}
+              <div className="flex items-center space-x-1 md:space-x-2 flex-shrink-0">
+                {headerActions.map((action, index) => (
+                  <Button 
+                    key={index} 
+                    variant={action.variant} 
+                    size="sm" 
+                    className={`text-xs md:text-sm ${index === 0 ? "hidden sm:flex" : ""}`} 
+                    aria-label={action.label}
+                  >
+                    {action.icon}
+                    <span className="hidden lg:inline">{action.label}</span>
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto" role="main">
+        <main className="flex-1 p-3 md:p-4 lg:p-6 xl:p-8 overflow-y-auto" role="main">
           {renderContent()}
         </main>
       </div>
