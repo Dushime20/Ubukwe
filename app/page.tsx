@@ -65,8 +65,8 @@ export default function HomePage() {
       {/* Header */}
   <Navbar/>
       {/* Hero Section */}
-      <section className="py-12 md:py-20  mx-4">
-        <div className="container   max-w-7xl">
+      <section className="py-12 md:py-20 px-4">
+        <div className="container mx-auto max-w-6xl">
           <div className="flex flex-col lg:flex-row items-center gap-2">
             {/* Text Content */}
             <div className="text-content w-full lg:w-1/2 text-center lg:text-left ">
