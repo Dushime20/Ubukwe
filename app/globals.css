@@ -4,63 +4,63 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated to Rwandan cultural color palette */
+  /* Updated to Rose Gold Elegance palette */
   --background: #fffeff;
   --foreground: oklch(0.15 0.02 45);
   --card: #fffeff;
   --card-foreground: oklch(0.15 0.02 45);
   --popover: #fffeff;
   --popover-foreground: oklch(0.15 0.02 45);
-  --primary: oklch(0.25 0.15 350); /* Dark maroon */
+  --primary: oklch(0.55 0.12 200); /* Rose Gold - Elegant and romantic */
   --primary-foreground: oklch(0.98 0.01 85);
   --secondary: oklch(0.92 0.02 85); /* Cream */
   --secondary-foreground: oklch(0.15 0.02 45);
   --muted: oklch(0.95 0.01 85);
   --muted-foreground: oklch(0.45 0.02 45);
-  --accent: oklch(0.25 0.15 350); /* Dark maroon */
+  --accent: oklch(0.55 0.12 200); /* Rose Gold accent */
   --accent-foreground: oklch(0.98 0.01 85);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.98 0.01 85);
   --border: oklch(0.88 0.02 85);
   --input: oklch(0.95 0.01 85);
-  --ring: oklch(0.25 0.15 350);
-  --chart-1: oklch(0.25 0.15 350);
-  --chart-2: oklch(0.25 0.15 350);
+  --ring: oklch(0.55 0.12 200);
+  --chart-1: oklch(0.55 0.12 200);
+  --chart-2: oklch(76.079% 0.06953 188.818);
   --chart-3: oklch(0.55 0.18 25);
-  --chart-4: oklch(0.85 0.08 55);
+  --chart-4: oklch(76.079% 0.06953 188.818);
   --chart-5: oklch(0.45 0.15 15);
   --radius: 0.75rem;
   --sidebar: #fffeff;
   --sidebar-foreground: oklch(0.15 0.02 45);
-  --sidebar-primary: oklch(0.25 0.15 350);
+  --sidebar-primary: oklch(0.55 0.12 200);
   --sidebar-primary-foreground: oklch(0.98 0.01 85);
   --sidebar-accent: oklch(0.92 0.02 85);
   --sidebar-accent-foreground: oklch(0.15 0.02 45);
   --sidebar-border: oklch(0.88 0.02 85);
-  --sidebar-ring: oklch(0.25 0.15 350);
+  --sidebar-ring: oklch(0.55 0.12 200);
 }
 
 .dark {
-  /* Dark mode with cultural warmth */
+  /* Dark mode with rose gold warmth */
   --background: oklch(0.12 0.02 45);
   --foreground: oklch(0.95 0.01 85);
   --card: oklch(0.15 0.02 45);
   --card-foreground: oklch(0.95 0.01 85);
   --popover: oklch(0.15 0.02 45);
   --popover-foreground: oklch(0.95 0.01 85);
-  --primary: oklch(0.25 0.15 350);
+  --primary: oklch(0.55 0.12 200); /* Lighter rose gold for dark mode */
   --primary-foreground: oklch(0.12 0.02 45);
   --secondary: oklch(0.25 0.02 45);
   --secondary-foreground: oklch(0.95 0.01 85);
   --muted: oklch(0.22 0.02 45);
   --muted-foreground: oklch(0.65 0.02 45);
-  --accent: oklch(0.85 0.08 35);
+  --accent: oklch(0.55 0.12 200); /* Rose gold accent */
   --accent-foreground: oklch(0.12 0.02 45);
   --destructive: oklch(0.55 0.2 25);
   --destructive-foreground: oklch(0.95 0.01 85);
   --border: oklch(0.25 0.02 45);
   --input: oklch(0.22 0.02 45);
-  --ring: oklch(0.25 0.15 350);
+  --ring: oklch(0.55 0.12 200);
 }
 
 @theme inline {
