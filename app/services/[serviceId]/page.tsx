@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import {
     MapPin, Star, Phone, Mail, Share2, Heart, ArrowLeft,
     CheckCircle, Users, Clock, Award, Calendar, Tag,
-    Play, Image as ImageIcon, Video, Sparkles
+    Play, Image as ImageIcon, Video, Sparkles, ThumbsUp, MessageSquare
 } from "lucide-react"
 import Link from "next/link"
 import { Navbar } from "@/components/ui/navbar"
@@ -28,7 +28,6 @@ export default function ServiceDetailsPage({ params }: { params: { serviceId: st
         category: "Traditional Troupe",
         location: "Kigali, Rwanda",
         rating: 4.9,
-        reviews: 127,
         verified: true,
         experience: "8+ years",
         image: "/rwandan-traditional-dancer.jpg",
@@ -161,6 +160,71 @@ export default function ServiceDetailsPage({ params }: { params: { serviceId: st
             yearsExperience: 8,
             teamSize: 15,
             satisfactionRate: 98
+        },
+        reviews: {
+            summary: {
+                average: 4.9,
+                total: 127,
+                breakdown: {
+                    5: 98,
+                    4: 22,
+                    3: 5,
+                    2: 1,
+                    1: 1
+                }
+            },
+            items: [
+                {
+                    id: 1,
+                    author: "Jean-Claude Mugabo",
+                    avatar: "/placeholder.svg",
+                    rating: 5,
+                    date: "2024-02-15",
+                    verified: true,
+                    comment: "Absolutely phenomenal performance! The Intore dancers brought so much energy and cultural authenticity to our wedding. Our guests were mesmerized by the traditional costumes and choreography. Highly recommend for anyone wanting to honor Rwandan heritage at their celebration.",
+                    helpful: 24
+                },
+                {
+                    id: 2,
+                    author: "Marie Uwase",
+                    avatar: "/placeholder.svg",
+                    rating: 5,
+                    date: "2024-01-28",
+                    verified: true,
+                    comment: "The Amahoro Dance Troupe exceeded all our expectations! They were professional, punctual, and the performance was breathtaking. The live drumming added such an authentic touch. Worth every franc!",
+                    helpful: 18
+                },
+                {
+                    id: 3,
+                    author: "Patrick Nkurunziza",
+                    avatar: "/placeholder.svg",
+                    rating: 5,
+                    date: "2024-01-10",
+                    verified: true,
+                    comment: "We booked the Premium package and it was the highlight of our wedding day. The dancers were incredible, the costumes were stunning, and they even taught some of our guests traditional dance moves. Unforgettable experience!",
+                    helpful: 15
+                },
+                {
+                    id: 4,
+                    author: "Grace Mukamana",
+                    avatar: "/placeholder.svg",
+                    rating: 4,
+                    date: "2023-12-20",
+                    verified: true,
+                    comment: "Great performance overall. The dancers were skilled and the cultural storytelling was beautiful. Only minor issue was they started 15 minutes late, but once they began, it was magical.",
+                    helpful: 8
+                },
+                {
+                    id: 5,
+                    author: "Emmanuel Habimana",
+                    avatar: "/placeholder.svg",
+                    rating: 5,
+                    date: "2023-11-30",
+                    verified: false,
+                    comment: "Best decision we made for our wedding! The troupe was amazing and very accommodating to our special requests. They customized the choreography to include elements from both our families' traditions.",
+                    helpful: 12
+                }
+            ]
         }
     }
 
@@ -196,7 +260,7 @@ export default function ServiceDetailsPage({ params }: { params: { serviceId: st
                                     <div className="flex items-center gap-1">
                                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                                         <span className="font-semibold">{service.rating}</span>
-                                        <span className="text-gray-600">({service.reviews} reviews)</span>
+                                        <span className="text-gray-600">({service.reviews.summary.total} reviews)</span>
                                     </div>
                                     <div className="flex items-center gap-1 text-gray-600">
                                         <MapPin className="h-4 w-4" />
@@ -357,6 +421,141 @@ export default function ServiceDetailsPage({ params }: { params: { serviceId: st
                                                 <div className="text-sm text-gray-600 mt-1">Satisfaction Rate</div>
                                             </div>
                                         </div>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Reviews & Ratings */}
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                                            Reviews & Ratings
+                                        </CardTitle>
+                                        <CardDescription>
+                                            See what our clients are saying about their experience
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-6">
+                                        {/* Rating Summary */}
+                                        <div className="grid md:grid-cols-2 gap-6">
+                                            {/* Overall Rating */}
+                                            <div className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg">
+                                                <div className="text-5xl font-bold text-primary mb-2">
+                                                    {service.reviews.summary.average}
+                                                </div>
+                                                <div className="flex items-center gap-1 mb-2">
+                                                    {[1, 2, 3, 4, 5].map((star) => (
+                                                        <Star
+                                                            key={star}
+                                                            className={`h-5 w-5 ${star <= Math.round(service.reviews.summary.average)
+                                                                ? 'fill-yellow-400 text-yellow-400'
+                                                                : 'text-gray-300'
+                                                                }`}
+                                                        />
+                                                    ))}
+                                                </div>
+                                                <div className="text-sm text-gray-600">
+                                                    Based on {service.reviews.summary.total} reviews
+                                                </div>
+                                            </div>
+
+                                            {/* Rating Breakdown */}
+                                            <div className="space-y-2">
+                                                {[5, 4, 3, 2, 1].map((rating) => {
+                                                    const count = service.reviews.summary.breakdown[rating as keyof typeof service.reviews.summary.breakdown]
+                                                    const percentage = (count / service.reviews.summary.total) * 100
+                                                    return (
+                                                        <div key={rating} className="flex items-center gap-3">
+                                                            <div className="flex items-center gap-1 w-12">
+                                                                <span className="text-sm font-medium">{rating}</span>
+                                                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                                            </div>
+                                                            <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                                <div
+                                                                    className="h-full bg-yellow-400 transition-all"
+                                                                    style={{ width: `${percentage}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className="text-sm text-gray-600 w-12 text-right">
+                                                                {count}
+                                                            </span>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        <Separator />
+
+                                        {/* Individual Reviews */}
+                                        <div className="space-y-4">
+                                            <h4 className="font-semibold">Customer Reviews</h4>
+                                            {service.reviews.items.map((review) => (
+                                                <Card key={review.id} className="border-l-4 border-l-primary/20">
+                                                    <CardContent className="pt-6">
+                                                        <div className="flex items-start gap-4">
+                                                            <Avatar className="h-12 w-12">
+                                                                <AvatarImage src={review.avatar} />
+                                                                <AvatarFallback>{review.author[0]}</AvatarFallback>
+                                                            </Avatar>
+                                                            <div className="flex-1">
+                                                                <div className="flex items-start justify-between mb-2">
+                                                                    <div>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <h5 className="font-semibold">{review.author}</h5>
+                                                                            {review.verified && (
+                                                                                <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+                                                                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                                                                    Verified
+                                                                                </Badge>
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2 mt-1">
+                                                                            <div className="flex items-center gap-0.5">
+                                                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                                                    <Star
+                                                                                        key={star}
+                                                                                        className={`h-4 w-4 ${star <= review.rating
+                                                                                            ? 'fill-yellow-400 text-yellow-400'
+                                                                                            : 'text-gray-300'
+                                                                                            }`}
+                                                                                    />
+                                                                                ))}
+                                                                            </div>
+                                                                            <span className="text-sm text-gray-500">
+                                                                                {new Date(review.date).toLocaleDateString('en-US', {
+                                                                                    year: 'numeric',
+                                                                                    month: 'long',
+                                                                                    day: 'numeric'
+                                                                                })}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <p className="text-gray-700 leading-relaxed mb-3">
+                                                                    {review.comment}
+                                                                </p>
+                                                                <div className="flex items-center gap-4">
+                                                                    <Button variant="ghost" size="sm" className="h-8 text-gray-600">
+                                                                        <ThumbsUp className="h-4 w-4 mr-1" />
+                                                                        Helpful ({review.helpful})
+                                                                    </Button>
+                                                                    <Button variant="ghost" size="sm" className="h-8 text-gray-600">
+                                                                        <MessageSquare className="h-4 w-4 mr-1" />
+                                                                        Reply
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            ))}
+                                        </div>
+
+                                        {/* View All Reviews Button */}
+                                        <Button variant="outline" className="w-full">
+                                            View All {service.reviews.summary.total} Reviews
+                                        </Button>
                                     </CardContent>
                                 </Card>
                             </TabsContent>
