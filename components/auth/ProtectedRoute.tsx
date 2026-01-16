@@ -11,9 +11,9 @@ interface ProtectedRouteProps {
   redirectTo?: string;
 }
 
-export const ProtectedRoute = ({ 
-  children, 
-  allowedRoles = ['customer', 'provider', 'admin'],
+export const ProtectedRoute = ({
+  children,
+  allowedRoles = ['customer', 'service_provider', 'admin'],
   redirectTo = '/auth/signin'
 }: ProtectedRouteProps) => {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -30,7 +30,7 @@ export const ProtectedRoute = ({
         // Redirect to appropriate dashboard based on user role
         if (user.role === 'admin') {
           router.push('/admin/dashboard');
-        } else if (user.role === 'provider') {
+        } else if (user.role === 'service_provider') {
           router.push('/provider/dashboard');
         } else {
           router.push('/customer/dashboard');
@@ -68,7 +68,7 @@ export const AdminRoute = ({ children }: { children: React.ReactNode }) => (
 );
 
 export const ProviderRoute = ({ children }: { children: React.ReactNode }) => (
-  <ProtectedRoute allowedRoles={['provider']}>
+  <ProtectedRoute allowedRoles={['service_provider']}>
     {children}
   </ProtectedRoute>
 );
@@ -80,7 +80,7 @@ export const CustomerRoute = ({ children }: { children: React.ReactNode }) => (
 );
 
 export const CustomerOrProviderRoute = ({ children }: { children: React.ReactNode }) => (
-  <ProtectedRoute allowedRoles={['customer', 'provider']}>
+  <ProtectedRoute allowedRoles={['customer', 'service_provider']}>
     {children}
   </ProtectedRoute>
 );

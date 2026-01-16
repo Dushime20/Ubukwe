@@ -17,6 +17,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient, API_ENDPOINTS, Wedding, ProviderService } from "@/lib/api";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 interface OverviewProps {
   weddingDetails: {
@@ -37,24 +41,49 @@ interface OverviewProps {
     category: string;
     completed: boolean;
   }>;
-  recommendedServices: Array<{
-    id: number;
-    provider: string;
-    service: string;
-    price: string;
-    rating: number;
-    icon: React.ReactNode;
-  }>;
+
 }
 
-export function Overview({ weddingDetails, planningProgress, checklist, recommendedServices }: OverviewProps) {
+export function Overview({
+  weddingDetails,
+  planningProgress,
+  checklist,
+}: OverviewProps) {
+  const queryClient = useQueryClient();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  // Fetch real wedding details
+  const { data: weddingResponse, isLoading } = useQuery({
+    queryKey: ["wedding-me"],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get<Wedding>(API_ENDPOINTS.WEDDING.ME);
+        return response.data;
+      } catch (err: any) {
+        if (err.message.includes("404")) return null;
+        throw err;
+      }
+    }
+  });
+
+  // Fetch recommended services
+  const { data: recommendationsRes } = useQuery({
+    queryKey: ["service-recommendations"],
+    queryFn: async () => {
+      const response = await apiClient.get<ProviderService[]>(API_ENDPOINTS.SERVICES.LIST);
+      return (response.data || []).slice(0, 3);
+    }
+  });
+
+  const recommendedServices = recommendationsRes || [];
+  const currentWedding = weddingResponse || null;
+
   const [groomName, setGroomName] = useState("");
   const [brideName, setBrideName] = useState("");
   const [weddingDate, setWeddingDate] = useState("");
 
-  // Parse existing couple name if available
-  const parseCoupleName = (coupleName: string) => {
+  const parseCoupleName = (coupleName?: string) => {
+    if (!coupleName) return { bride: "", groom: "" };
     const parts = coupleName.split(" & ");
     return {
       bride: parts[0]?.trim() || "",
@@ -63,31 +92,62 @@ export function Overview({ weddingDetails, planningProgress, checklist, recommen
   };
 
   const handleEditClick = () => {
-    const { bride, groom } = parseCoupleName(weddingDetails.coupleName);
+    const { bride, groom } = parseCoupleName(displayWedding.coupleName);
     setBrideName(bride);
     setGroomName(groom);
-    setWeddingDate(weddingDetails.weddingDate);
+    setWeddingDate(displayWedding.weddingDate || "");
     setIsEditDialogOpen(true);
   };
 
+  const saveMutation = useMutation({
+    mutationFn: async (data: any) => {
+      if (currentWedding) {
+        return apiClient.put(API_ENDPOINTS.WEDDING.ME, data);
+      } else {
+        return apiClient.post(API_ENDPOINTS.WEDDING.BASE, data);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["wedding-me"] });
+      toast.success("Wedding details updated successfully");
+      setIsEditDialogOpen(false);
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to update wedding details");
+    }
+  });
+
   const handleSave = () => {
-    // Here you would typically save to backend/state management
-    console.log("Saving wedding details:", {
-      brideName,
-      groomName,
-      weddingDate
+    if (!brideName || !groomName || !weddingDate) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+    saveMutation.mutate({
+      couple_name: `${brideName} & ${groomName}`,
+      wedding_date: weddingDate
     });
-    // TODO: Implement actual save logic
-    setIsEditDialogOpen(false);
   };
 
-  // Check if wedding details are set
-  const hasWeddingDetails = () => {
-    const { bride, groom } = parseCoupleName(weddingDetails.coupleName);
-    return bride && groom && bride !== "Marie" && groom !== "Jean"; // Assuming "Marie & Jean" is default/placeholder
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading wedding details...</span>
+      </div>
+    );
+  }
 
-  const isDetailsSet = hasWeddingDetails();
+  const isDetailsSet = !!currentWedding;
+
+  // Normalize wedding data to use camelCase consistently
+  const displayWedding = {
+    coupleName: currentWedding?.couple_name || weddingDetails.coupleName,
+    weddingDate: currentWedding?.wedding_date || weddingDetails.weddingDate,
+    guestCount: currentWedding?.guest_count ?? weddingDetails.guestCount,
+    budget: currentWedding ? Number(currentWedding.budget) : (weddingDetails.budget || 0),
+    spent: currentWedding ? Number(currentWedding.spent) : (weddingDetails.spent || 0),
+    venue: currentWedding?.venue || weddingDetails.venue || "Not set"
+  };
 
   return (
     <div className="space-y-6">
@@ -154,9 +214,13 @@ export function Overview({ weddingDetails, planningProgress, checklist, recommen
                     <X className="h-4 w-4 mr-2" />
                     Cancel
                   </Button>
-                  <Button onClick={handleSave}>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Changes
+                  <Button onClick={handleSave} disabled={saveMutation.isPending}>
+                    {saveMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4 mr-2" />
+                    )}
+                    {isDetailsSet ? "Save Changes" : "Save Details"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -168,23 +232,23 @@ export function Overview({ weddingDetails, planningProgress, checklist, recommen
             <div className="flex flex-col items-center justify-center p-4 bg-white rounded-lg">
               <div className="text-sm text-muted-foreground mb-1">Bride</div>
               <div className={`text-lg font-semibold ${isDetailsSet ? 'text-primary' : 'text-muted-foreground'}`}>
-                {parseCoupleName(weddingDetails.coupleName).bride || "Not set"}
+                {parseCoupleName(displayWedding.coupleName).bride || "Not set"}
               </div>
             </div>
             <div className="flex flex-col items-center justify-center p-4 bg-white rounded-lg">
               <div className="text-sm text-muted-foreground mb-1">Groom</div>
               <div className={`text-lg font-semibold ${isDetailsSet ? 'text-primary' : 'text-muted-foreground'}`}>
-                {parseCoupleName(weddingDetails.coupleName).groom || "Not set"}
+                {parseCoupleName(displayWedding.coupleName).groom || "Not set"}
               </div>
             </div>
             <div className="flex flex-col items-center justify-center p-4 bg-white rounded-lg">
               <div className="text-sm text-muted-foreground mb-1">Wedding Date</div>
-              <div className="text-lg font-semibold">
-                {new Date(weddingDetails.weddingDate).toLocaleDateString('en-US', {
+              <div className={`text-lg font-semibold ${isDetailsSet ? 'text-foreground' : 'text-muted-foreground'}`}>
+                {isDetailsSet ? new Date(displayWedding.weddingDate).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'short',
                   day: 'numeric'
-                })}
+                }) : "Not set"}
               </div>
             </div>
           </div>
@@ -211,15 +275,15 @@ export function Overview({ weddingDetails, planningProgress, checklist, recommen
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary">
-                  {Math.ceil(
-                    (new Date(weddingDetails.weddingDate).getTime() - new Date().getTime()) /
+                  {isDetailsSet ? Math.max(0, Math.ceil(
+                    (new Date(displayWedding.weddingDate).getTime() - new Date().getTime()) /
                     (1000 * 60 * 60 * 24),
-                  )}
+                  )) : "--"}
                 </div>
                 <div className="text-xs text-muted-foreground">Days to go</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold">{weddingDetails.guestCount}</div>
+                <div className="text-2xl font-bold">{isDetailsSet ? displayWedding.guestCount : "--"}</div>
                 <div className="text-xs text-muted-foreground">Guests</div>
               </div>
               <div className="text-center">
@@ -228,7 +292,7 @@ export function Overview({ weddingDetails, planningProgress, checklist, recommen
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold">
-                  {Math.round((weddingDetails.spent / weddingDetails.budget) * 100)}%
+                  {isDetailsSet ? Math.round((Number(displayWedding.spent) / Number(displayWedding.budget)) * 100) : "0"}%
                 </div>
                 <div className="text-xs text-muted-foreground">Budget used</div>
               </div>
@@ -272,24 +336,27 @@ export function Overview({ weddingDetails, planningProgress, checklist, recommen
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {recommendedServices.slice(0, 3).map((service) => (
+            {recommendedServices.length > 0 ? recommendedServices.map((service) => (
               <div key={service.id} className="flex items-center justify-between p-3 border rounded-lg">
                 <div className="flex items-center space-x-3">
-                  <div className="text-primary">{service.icon}</div>
+                  <div className="text-primary truncate font-medium max-w-[150px]">{service.name}</div>
                   <div>
-                    <p className="text-sm font-medium">{service.provider}</p>
-                    <p className="text-xs text-muted-foreground">{service.service}</p>
+                    <p className="text-xs text-muted-foreground">{service.category}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium">{service.price}</p>
-                  <div className="flex items-center text-xs">
+                  <p className="text-sm font-semibold">{service.price_range_min ? `${service.price_range_min.toLocaleString()} RWF` : "Contact"}</p>
+                  <div className="flex items-center justify-end text-xs">
                     <Star className="h-3 w-3 text-yellow-400 mr-1" />
-                    <span>{service.rating}</span>
+                    <span>{service.rating.toFixed(1)}</span>
                   </div>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="text-center py-6 text-muted-foreground text-sm">
+                No recommendations yet.
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

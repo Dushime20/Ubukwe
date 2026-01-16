@@ -13,8 +13,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { RegisterRequest } from "@/lib/api"
 
 interface FormErrors {
-  firstName?: string
-  lastName?: string
+  fullName?: string
   email?: string
   password?: string
   confirmPassword?: string
@@ -25,17 +24,16 @@ interface FormErrors {
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    fullName: "",
     email: "",
     password: "",
     confirmPassword: "",
     phone: "",
     dateOfBirth: "",
     gender: "" as "male" | "female" | "other" | "",
-    role: "customer" as "customer" | "provider",
+    role: "event_owner" as "event_owner" | "service_provider",
   })
-  
+
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
@@ -53,12 +51,10 @@ export default function SignUpPage() {
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
 
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required'
-    }
-
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required'
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Full name is required'
+    } else if (formData.fullName.trim().split(' ').length < 2) {
+      newErrors.fullName = 'Please enter your full name (first and last name)'
     }
 
     if (!formData.email) {
@@ -106,14 +102,13 @@ export default function SignUpPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
       return
     }
 
     const registerData: RegisterRequest = {
-      firstName: formData.firstName.trim(),
-      lastName: formData.lastName.trim(),
+      full_name: formData.fullName.trim(),
       email: formData.email.trim().toLowerCase(),
       password: formData.password,
       confirmPassword: formData.confirmPassword,
@@ -149,46 +144,24 @@ export default function SignUpPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input
-                    id="firstName"
-                    placeholder="First name"
-                    value={formData.firstName}
-                    onChange={(e) => {
-                      setFormData({ ...formData, firstName: e.target.value })
-                      if (errors.firstName) {
-                        setErrors(prev => ({ ...prev, firstName: undefined }))
-                      }
-                    }}
-                    className={errors.firstName ? 'border-red-500' : ''}
-                    disabled={isRegistering}
-                  />
-                  {errors.firstName && (
-                    <p className="text-sm text-red-500">{errors.firstName}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    placeholder="Last name"
-                    value={formData.lastName}
-                    onChange={(e) => {
-                      setFormData({ ...formData, lastName: e.target.value })
-                      if (errors.lastName) {
-                        setErrors(prev => ({ ...prev, lastName: undefined }))
-                      }
-                    }}
-                    className={errors.lastName ? 'border-red-500' : ''}
-                    disabled={isRegistering}
-                  />
-                  {errors.lastName && (
-                    <p className="text-sm text-red-500">{errors.lastName}</p>
-                  )}
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  placeholder="John Doe"
+                  value={formData.fullName}
+                  onChange={(e) => {
+                    setFormData({ ...formData, fullName: e.target.value })
+                    if (errors.fullName) {
+                      setErrors(prev => ({ ...prev, fullName: undefined }))
+                    }
+                  }}
+                  className={errors.fullName ? 'border-red-500' : ''}
+                  disabled={isRegistering}
+                />
+                {errors.fullName && (
+                  <p className="text-sm text-red-500">{errors.fullName}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -361,23 +334,23 @@ export default function SignUpPage() {
                 <Label>I am a:</Label>
                 <RadioGroup
                   value={formData.role}
-                  onValueChange={(value: "customer" | "provider") => setFormData({ ...formData, role: value })}
+                  onValueChange={(value: "event_owner" | "service_provider") => setFormData({ ...formData, role: value })}
                   disabled={isRegistering}
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="customer" id="customer" />
+                    <RadioGroupItem value="event_owner" id="customer" />
                     <Label htmlFor="customer">Customer (Planning a wedding)</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="provider" id="provider" />
+                    <RadioGroupItem value="service_provider" id="provider" />
                     <Label htmlFor="provider">Service Provider (Offering services)</Label>
                   </div>
                 </RadioGroup>
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full" 
+              <Button
+                type="submit"
+                className="w-full"
                 disabled={isRegistering}
               >
                 {isRegistering ? (

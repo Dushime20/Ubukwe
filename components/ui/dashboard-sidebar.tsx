@@ -11,8 +11,7 @@ interface DashboardSidebarProps {
   isCollapsed?: boolean;
   onToggle?: () => void;
   user?: {
-    firstName: string;
-    lastName: string;
+    full_name: string;
     email: string;
     avatar?: string;
   };
@@ -83,7 +82,7 @@ export function DashboardSidebar({ activeTab, onTabChange, userRole = "Customer"
   React.useEffect(() => {
     try {
       window.localStorage.setItem('dashboardSidebarExpanded', JSON.stringify(expandedGroups));
-    } catch {}
+    } catch { }
   }, [expandedGroups]);
 
   const groupIconByTitle: Record<string, React.ReactNode> = {
@@ -113,7 +112,7 @@ export function DashboardSidebar({ activeTab, onTabChange, userRole = "Customer"
           {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </Button>
       </div>
-      
+
       <nav className="flex-1 overflow-y-auto space-y-4 scrollbar-hide">
         {navigationGroups.map((group, groupIndex) => (
           <div key={group.title} className="space-y-1">
@@ -132,7 +131,7 @@ export function DashboardSidebar({ activeTab, onTabChange, userRole = "Customer"
                 <ChevronDown className={`w-4 h-4 transition-transform ${expandedGroups[group.title] ? '' : '-rotate-90'}`} />
               </button>
             )}
-            
+
             {/* Group Items */}
             <div className={`space-y-1`}>
               {group.items.map((tab) => {
@@ -141,13 +140,11 @@ export function DashboardSidebar({ activeTab, onTabChange, userRole = "Customer"
                   <button
                     key={tab.id}
                     onClick={() => onTabChange(tab.id)}
-                    className={`relative group w-full text-left text-sm px-3 py-2.5 rounded-md transition-all duration-200 flex items-center ${
-                      isCollapsed ? 'justify-center' : 'gap-3'
-                    } ${
-                      isActive
+                    className={`relative group w-full text-left text-sm px-3 py-2.5 rounded-md transition-all duration-200 flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'
+                      } ${isActive
                         ? 'bg-muted text-foreground shadow-sm'
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 hover:shadow-sm'
-                    }`}
+                      }`}
                     title={isCollapsed ? tab.label : undefined}
                   >
                     <span className={`absolute left-0 top-2 bottom-2 w-1 rounded-full ${isActive ? 'bg-primary' : 'bg-transparent'}`} />
@@ -171,11 +168,11 @@ export function DashboardSidebar({ activeTab, onTabChange, userRole = "Customer"
               <div className="flex items-center p-3 rounded-lg bg-muted/30 min-w-0">
                 <div className="flex items-center space-x-3 flex-1 min-w-0 overflow-hidden">
                   <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-semibold text-primary flex-shrink-0">
-                    {user.firstName?.[0]}{user.lastName?.[0]}
+                    {user.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || user.email[0].toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0 overflow-hidden">
                     <p className="text-sm font-medium text-foreground truncate">
-                      {user.firstName} {user.lastName}
+                      {user.full_name}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">
                       {user.email}
@@ -193,7 +190,7 @@ export function DashboardSidebar({ activeTab, onTabChange, userRole = "Customer"
             ) : (
               <div className="flex flex-col items-center space-y-2">
                 <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-semibold text-primary">
-                  {user.firstName?.[0]}{user.lastName?.[0]}
+                  {user.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || user.email[0].toUpperCase()}
                 </div>
                 <button
                   onClick={onLogout}

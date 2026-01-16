@@ -15,218 +15,131 @@ import {
 import Link from "next/link"
 import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/ui/footer"
+import { useQuery } from "@tanstack/react-query"
+import { apiClient, API_ENDPOINTS, ProviderService } from "@/lib/api"
+import { Loader2, AlertCircle } from "lucide-react"
 
 export default function ServiceDetailsPage({ params }: { params: { serviceId: string } }) {
+    const { data: serviceRes, isLoading, error } = useQuery({
+        queryKey: ["service-detail", params.serviceId],
+        queryFn: async () => {
+            const response = await apiClient.get<ProviderService>(API_ENDPOINTS.SERVICES.DETAILS(params.serviceId));
+            return response.data;
+        }
+    });
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#eff4fa]">
+                <div className="text-center">
+                    <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
+                    <p className="text-muted-foreground font-medium">Loading service details...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error || !serviceRes) {
+        return (
+            <div className="min-h-screen flex flex-col bg-[#eff4fa]">
+                <Navbar />
+                <div className="flex-1 flex items-center justify-center">
+                    <Card className="max-w-md w-full mx-4">
+                        <CardContent className="p-8 text-center">
+                            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                            <h2 className="text-xl font-bold mb-2">Service Not Found</h2>
+                            <p className="text-muted-foreground mb-6">
+                                We couldn't find the service you're looking for. It might have been removed or the link is incorrect.
+                            </p>
+                            <Link href="/services">
+                                <Button className="w-full">Browse All Services</Button>
+                            </Link>
+                        </CardContent>
+                    </Card>
+                </div>
+                <Footer />
+            </div>
+        );
+    }
+
+    const serviceData = serviceRes;
+
     const [activeTab, setActiveTab] = useState("home")
     const [isFavorite, setIsFavorite] = useState(false)
 
-    // Mock service data - in real app this would be fetched based on serviceId
+    // Helper to format packages
+    const pkgArray = Array.isArray(serviceData.packages) ? serviceData.packages : [];
+
+    // Map backend to frontend structure
     const service = {
-        id: params.serviceId,
-        title: "Intore Cultural Dancers",
-        provider: "Amahoro Dance Troupe",
-        category: "Traditional Troupe",
-        location: "Kigali, Rwanda",
-        rating: 4.9,
+        id: serviceData.id,
+        title: serviceData.name,
+        provider: "Verified Provider", // Needs backend join
+        category: serviceData.category,
+        location: serviceData.location || "Rwanda",
+        rating: serviceData.rating || 0,
         verified: true,
-        experience: "8+ years",
-        image: "/rwandan-traditional-dancer.jpg",
-        coverImage: "/rwandan-traditional-dancer.jpg",
-        description: "Experience the authentic beauty of Rwandan culture with our professional Intore dance troupe. We bring centuries-old traditions to life through captivating performances that honor your heritage and create unforgettable memories for your special day.",
-        longDescription: "Our Intore Cultural Dancers are renowned for their authentic performances that showcase the rich heritage of Rwanda. With over 8 years of experience, our troupe has performed at hundreds of weddings, cultural events, and celebrations across Rwanda and internationally. Each performance is carefully choreographed to blend traditional movements with contemporary flair, ensuring your guests are thoroughly entertained while respecting cultural traditions.",
-        specialties: [
-            "Traditional Intore Dance",
-            "Cultural Storytelling",
-            "Custom Choreography",
-            "Traditional Costumes",
-            "Live Drumming"
-        ],
+        experience: "Expert",
+        image: serviceData.gallery?.[0] || "/placeholder.svg",
+        coverImage: serviceData.gallery?.[0] || "/placeholder.svg",
+        description: serviceData.description || "Elegant wedding service provider.",
+        longDescription: serviceData.description || "A professional wedding service provider dedicated to making your special day unforgettable.",
+        specialties: [serviceData.category],
         features: [
-            "Professional choreography tailored to your event",
-            "Authentic traditional costumes and accessories",
-            "Live drumming accompaniment",
-            "Cultural storytelling and narration",
-            "Photo opportunities with performers",
-            "Flexible performance duration"
+            "Professional service delivery",
+            "High-quality equipment/materials",
+            "Experienced team",
+            "Cultural expertise"
         ],
-        packages: [
-            {
-                id: "basic",
-                name: "Basic Performance",
-                price: 150000,
-                duration: "30 minutes",
-                description: "Perfect for intimate celebrations",
-                features: [
-                    "4-6 dancers",
-                    "Traditional costumes",
-                    "30-minute performance",
-                    "Basic choreography"
-                ],
-                popular: false
-            },
+        packages: pkgArray.length > 0 ? pkgArray.map((p: any, i: number) => ({
+            id: p.id || `pkg-${i}`,
+            name: p.name || "Service Package",
+            price: p.price || 0,
+            duration: p.duration || "Event Duration",
+            description: p.description || "Full service package",
+            features: p.features || ["Comprehensive service", "Professional team"],
+            popular: p.popular || false
+        })) : [
             {
                 id: "standard",
-                name: "Standard Performance",
-                price: 250000,
-                duration: "1 hour",
-                description: "Most popular choice for weddings",
-                features: [
-                    "8-10 dancers",
-                    "Premium traditional costumes",
-                    "1-hour performance",
-                    "Custom choreography",
-                    "Live drumming",
-                    "Photo session"
-                ],
+                name: "Standard Package",
+                price: serviceData.price_range_min || 0,
+                duration: "Event Duration",
+                description: "Our most popular offering",
+                features: ["On-time delivery", "Professional crew", "Post-event support"],
                 popular: true
-            },
-            {
-                id: "premium",
-                name: "Premium Experience",
-                price: 400000,
-                duration: "2 hours",
-                description: "Complete cultural experience",
-                features: [
-                    "12-15 dancers",
-                    "Luxury traditional costumes",
-                    "2-hour performance",
-                    "Fully customized choreography",
-                    "Live drumming ensemble",
-                    "Cultural storytelling",
-                    "Extended photo session",
-                    "Guest participation segment"
-                ],
-                popular: false
             }
         ],
         gallery: {
-            photos: [
-                { id: 1, url: "/rwandan-traditional-dancer.jpg", caption: "Traditional Intore performance" },
-                { id: 2, url: "/rwandan-wedding-decorations-traditional.jpg", caption: "Wedding ceremony" },
-                { id: 3, url: "/beautiful-garden-wedding-venue-rwanda.jpg", caption: "Outdoor performance" },
-                { id: 4, url: "/rwandan-traditional-food-buffet.jpg", caption: "Cultural celebration" },
-                { id: 5, url: "/rwandan-traditional-dancer.jpg", caption: "Costume details" },
-                { id: 6, url: "/rwandan-traditional-musicians-inanga.jpg", caption: "Drumming ensemble" }
-            ],
-            videos: [
-                { id: 1, url: "/sample-video.mp4", thumbnail: "/rwandan-traditional-dancer.jpg", title: "Full Wedding Performance", duration: "5:30" },
-                { id: 2, url: "/sample-video.mp4", thumbnail: "/rwandan-traditional-musicians-inanga.jpg", title: "Behind the Scenes", duration: "3:15" }
-            ],
-            reels: [
-                { id: 1, url: "/sample-reel.mp4", thumbnail: "/rwandan-traditional-dancer.jpg", title: "Quick Highlight", views: "12.5K" },
-                { id: 2, url: "/sample-reel.mp4", thumbnail: "/beautiful-garden-wedding-venue-rwanda.jpg", title: "Dance Moves", views: "8.3K" }
-            ]
+            photos: serviceData.gallery?.map((url, i) => ({
+                id: i,
+                url,
+                caption: `Gallery image ${i + 1}`
+            })) || [],
+            videos: [],
+            reels: []
         },
-        events: [
-            {
-                id: 1,
-                type: "promotion",
-                title: "Spring Wedding Special",
-                description: "Book now and get 15% off on our Standard Performance package for weddings in March-May 2024",
-                validUntil: "2024-05-31",
-                discount: "15% OFF",
-                badge: "Limited Time"
-            },
-            {
-                id: 2,
-                type: "event",
-                title: "Cultural Festival Performance",
-                description: "Join us at the Kigali Cultural Festival where we'll be showcasing our latest choreography",
-                date: "2024-04-15",
-                location: "Kigali Convention Centre"
-            },
-            {
-                id: 3,
-                type: "new-service",
-                title: "Interactive Dance Workshops",
-                description: "New! We now offer pre-wedding dance workshops for couples who want to learn traditional moves",
-                badge: "New Service"
-            },
-            {
-                id: 4,
-                type: "promotion",
-                title: "Group Booking Discount",
-                description: "Book multiple services together and save up to 20% on your total booking",
-                discount: "Up to 20% OFF"
-            }
-        ],
+        events: [],
         contact: {
-            phone: "+250 788 123 456",
-            email: "info@amahorodance.rw",
-            website: "www.amahorodance.rw"
+            phone: "+250 000 000 000",
+            email: "contact@provider.rw",
+            website: "www.provider.rw"
         },
         stats: {
-            eventsCompleted: 250,
-            yearsExperience: 8,
-            teamSize: 15,
-            satisfactionRate: 98
+            eventsCompleted: serviceData.bookings_count || 0,
+            yearsExperience: 5,
+            teamSize: 10,
+            satisfactionRate: 95
         },
         reviews: {
             summary: {
-                average: 4.9,
-                total: 127,
-                breakdown: {
-                    5: 98,
-                    4: 22,
-                    3: 5,
-                    2: 1,
-                    1: 1
-                }
+                average: serviceData.rating || 0,
+                total: serviceData.bookings_count || 0,
+                breakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
             },
-            items: [
-                {
-                    id: 1,
-                    author: "Jean-Claude Mugabo",
-                    avatar: "/placeholder.svg",
-                    rating: 5,
-                    date: "2024-02-15",
-                    verified: true,
-                    comment: "Absolutely phenomenal performance! The Intore dancers brought so much energy and cultural authenticity to our wedding. Our guests were mesmerized by the traditional costumes and choreography. Highly recommend for anyone wanting to honor Rwandan heritage at their celebration.",
-                    helpful: 24
-                },
-                {
-                    id: 2,
-                    author: "Marie Uwase",
-                    avatar: "/placeholder.svg",
-                    rating: 5,
-                    date: "2024-01-28",
-                    verified: true,
-                    comment: "The Amahoro Dance Troupe exceeded all our expectations! They were professional, punctual, and the performance was breathtaking. The live drumming added such an authentic touch. Worth every franc!",
-                    helpful: 18
-                },
-                {
-                    id: 3,
-                    author: "Patrick Nkurunziza",
-                    avatar: "/placeholder.svg",
-                    rating: 5,
-                    date: "2024-01-10",
-                    verified: true,
-                    comment: "We booked the Premium package and it was the highlight of our wedding day. The dancers were incredible, the costumes were stunning, and they even taught some of our guests traditional dance moves. Unforgettable experience!",
-                    helpful: 15
-                },
-                {
-                    id: 4,
-                    author: "Grace Mukamana",
-                    avatar: "/placeholder.svg",
-                    rating: 4,
-                    date: "2023-12-20",
-                    verified: true,
-                    comment: "Great performance overall. The dancers were skilled and the cultural storytelling was beautiful. Only minor issue was they started 15 minutes late, but once they began, it was magical.",
-                    helpful: 8
-                },
-                {
-                    id: 5,
-                    author: "Emmanuel Habimana",
-                    avatar: "/placeholder.svg",
-                    rating: 5,
-                    date: "2023-11-30",
-                    verified: false,
-                    comment: "Best decision we made for our wedding! The troupe was amazing and very accommodating to our special requests. They customized the choreography to include elements from both our families' traditions.",
-                    helpful: 12
-                }
-            ]
+            items: []
         }
-    }
+    };
 
     return (
         <div className="min-h-screen bg-[#eff4fa]">

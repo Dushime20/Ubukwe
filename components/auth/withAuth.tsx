@@ -23,7 +23,7 @@ export function withAuth<T extends object>(
           // Redirect to appropriate dashboard based on user role
           if (user.role === 'admin') {
             router.push('/admin/dashboard');
-          } else if (user.role === 'provider') {
+          } else if (user.role === 'service_provider') {
             router.push('/provider/dashboard');
           } else {
             router.push('/customer/dashboard');
@@ -47,10 +47,10 @@ export const withAdminAuth = <T extends object>(Component: React.ComponentType<T
   withAuth(Component, ['admin']);
 
 export const withProviderAuth = <T extends object>(Component: React.ComponentType<T>) =>
-  withAuth(Component, ['provider']);
+  withAuth(Component, ['service_provider']);
 
 export const withCustomerAuth = <T extends object>(Component: React.ComponentType<T>) =>
   withAuth(Component, ['customer']);
 
 export const withCustomerOrProviderAuth = <T extends object>(Component: React.ComponentType<T>) =>
-  withAuth(Component, ['customer', 'provider']);
+  withAuth(Component, ['customer', 'service_provider']);

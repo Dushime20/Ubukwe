@@ -57,8 +57,14 @@ export const useAuth = () => {
       
       toast.success('Login successful!');
       
-      // Redirect to customer dashboard after login
-      router.push('/customer/dashboard');
+      // Redirect to appropriate dashboard based on user role
+      if (user?.role === 'admin') {
+        router.push('/admin/dashboard');
+      } else if (user?.role === 'service_provider') {
+        router.push('/provider/dashboard');
+      } else {
+        router.push('/customer/dashboard');
+      }
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Login failed');
@@ -68,17 +74,8 @@ export const useAuth = () => {
   // Register mutation
   const registerMutation = useMutation({
     mutationFn: authApi.register,
-    onSuccess: (data) => {
-      const { user, accessToken, refreshToken } = data.data;
-      
-      // Store tokens and user data
-      tokenManager.setTokens(accessToken, refreshToken);
-      userManager.setUser(user);
-      
-      // Update query cache
-      queryClient.setQueryData(authKeys.user(), user);
-      
-      toast.success('Registration successful!');
+    onSuccess: () => {
+      toast.success('Registration successful! Please sign in.');
       
       // Redirect to login page after registration
       router.push('/auth/signin');

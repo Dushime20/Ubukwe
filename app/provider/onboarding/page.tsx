@@ -9,10 +9,15 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Upload, FileText, CheckCircle, AlertCircle, ArrowRight } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
+import { apiClient } from "@/lib/api-client"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import Link from "next/link"
 
 export default function ProviderOnboarding() {
+  const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     businessName: "",
     businessType: "",
@@ -68,6 +73,44 @@ export default function ProviderOnboarding() {
     if (currentStep > 1) setCurrentStep(currentStep - 1)
   }
 
+  const handleSubmit = async () => {
+    setIsSubmitting(true)
+    try {
+      // 1. Upload Documents first
+      await apiClient.provider.uploadDocuments(
+        documents.businessLicense || undefined,
+        documents.portfolio.length > 0 ? documents.portfolio : undefined
+      )
+
+      // 2. Register Team / Complete Onboarding
+      const registrationData = {
+        business_type: formData.businessType,
+        years_experience: parseInt(formData.yearsExperience) || 0,
+        business_description: formData.description,
+        service_categories: formData.serviceCategories,
+        address: formData.address,
+        city: formData.city,
+        country: formData.country,
+        phone_number: formData.phone,
+        location: `${formData.city}, ${formData.country}`,
+        // Backend required fields for register-team
+        price_per_session: 0, // Default or placeholder
+        currency: "RWF",
+        team_size: 1,
+      }
+
+      await apiClient.provider.registerTeam(registrationData)
+
+      toast.success("Onboarding completed successfully!")
+      router.push("/provider/dashboard")
+    } catch (error: any) {
+      console.error("Onboarding failed:", error)
+      toast.error(error.message || "Failed to complete onboarding. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   const progress = (currentStep / 5) * 100
 
   return (
@@ -88,13 +131,12 @@ export default function ProviderOnboarding() {
             {steps.map((step) => (
               <div key={step.id} className="flex flex-col items-center flex-1">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    step.completed
-                      ? "bg-primary text-primary-foreground"
-                      : currentStep === step.id
+                  className={`w-10 h-10 rounded-full flex items-center justify-center ${step.completed
+                    ? "bg-primary text-primary-foreground"
+                    : currentStep === step.id
                       ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
                       : "bg-muted text-muted-foreground"
-                  }`}
+                    }`}
                 >
                   {step.completed ? <CheckCircle className="w-5 h-5" /> : step.id}
                 </div>
@@ -453,8 +495,8 @@ export default function ProviderOnboarding() {
                   Next Step <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               ) : (
-                <Button onClick={() => alert("Submitting application...")}>
-                  Submit Application
+                <Button onClick={handleSubmit} disabled={isSubmitting}>
+                  {isSubmitting ? "Submitting..." : "Submit Application"}
                 </Button>
               )}
             </div>

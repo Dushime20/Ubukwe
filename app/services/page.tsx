@@ -12,91 +12,23 @@ import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/ui/footer"
 import { ServiceSchema } from "@/components/schemas/service-schema"
 import { EmptyState } from "@/components/ui/empty-state"
+import { useQuery } from "@tanstack/react-query"
+import { apiClient, API_ENDPOINTS, ProviderService } from "@/lib/api"
+import { Loader2 } from "lucide-react"
 
 export default function ServicesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
 
-  const services = [
-    {
-      id: 1,
-      category: "traditional-troupe",
-      icon: <Users className="h-6 w-6" />,
-      title: "Intore Cultural Dancers",
-      provider: "Amahoro Dance Troupe",
-      location: "Kigali",
-      rating: 4.9,
-      reviews: 127,
-      price: "From $200",
-      image: "/rwandan-traditional-dancer.jpg",
-      description: "Authentic Intore dancers with traditional costumes and choreography",
-    },
-    {
-      id: 2,
-      category: "mc",
-      icon: <Mic className="h-6 w-6" />,
-      title: "Bilingual Wedding MC",
-      provider: "Jean-Claude Events",
-      location: "Kigali",
-      rating: 4.8,
-      reviews: 89,
-      price: "From $150",
-      image: "/professional-mc-microphone.jpg",
-      description: "Experienced MC fluent in Kinyarwanda, French, and English",
-    },
-    {
-      id: 3,
-      category: "decoration",
-      icon: <Palette className="h-6 w-6" />,
-      title: "Traditional Wedding Decor",
-      provider: "Ubwiza Decorations",
-      location: "Kigali",
-      rating: 4.7,
-      reviews: 156,
-      price: "From $300",
-      image: "/rwandan-wedding-decorations-traditional.jpg",
-      description: "Beautiful traditional patterns and modern elegant designs",
-    },
-    {
-      id: 4,
-      category: "catering",
-      icon: <Utensils className="h-6 w-6" />,
-      title: "Authentic Rwandan Cuisine",
-      provider: "Inyama n'Amaru Catering",
-      location: "Kigali",
-      rating: 4.9,
-      reviews: 203,
-      price: "From $25/person",
-      image: "/rwandan-traditional-food-buffet.jpg",
-      description: "Traditional dishes including ubugali, inyama, and fresh vegetables",
-    },
-    {
-      id: 5,
-      category: "venue",
-      icon: <MapPin className="h-6 w-6" />,
-      title: "Garden Wedding Venue",
-      provider: "Serena Hotel Kigali",
-      location: "Kigali",
-      rating: 4.8,
-      reviews: 94,
-      price: "From $500",
-      image: "/beautiful-garden-wedding-venue-rwanda.jpg",
-      description: "Stunning outdoor venue with mountain views and traditional architecture",
-    },
-    {
-      id: 6,
-      category: "music-band",
-      icon: <Music className="h-6 w-6" />,
-      title: "Traditional Musicians",
-      provider: "Inanga Heritage Group",
-      location: "Kigali",
-      rating: 4.6,
-      reviews: 78,
-      price: "From $180",
-      image: "/rwandan-traditional-musicians-inanga.jpg",
-      description: "Live traditional music with inanga, drums, and cultural songs",
-    },
-  ]
+  const { data: servicesResponse, isLoading } = useQuery({
+    queryKey: ["public-services"],
+    queryFn: async () => {
+      const response = await apiClient.get<ProviderService[]>(API_ENDPOINTS.SERVICES.LIST);
+      return response.data;
+    }
+  });
+
+  const services = servicesResponse || [];
 
   const categoryGroups = [
     {
@@ -145,8 +77,8 @@ export default function ServicesPage() {
 
   const filteredServices = services.filter((service) => {
     const matchesSearch =
-      service.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.provider.toLowerCase().includes(searchTerm.toLowerCase())
+      service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.description?.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCategory = selectedCategory === "all" || service.category === selectedCategory
     return matchesSearch && matchesCategory
   })
@@ -156,52 +88,80 @@ export default function ServicesPage() {
     return filteredServices.filter(service => service.category === categoryValue)
   }
 
-  const ServiceCard = ({ service }: { service: typeof services[0] }) => (
-    <Card className="hover:shadow-lg transition-shadow">
-      <div className="aspect-video bg-secondary/20 rounded-t-lg overflow-hidden">
-        <img
-          src={service.image || "/placeholder.svg"}
-          alt={service.title}
-          className="w-full h-full object-cover"
-        />
-      </div>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="text-primary">{service.icon}</div>
-            <div>
-              <CardTitle className="text-lg">{service.title}</CardTitle>
-              <p className="text-sm text-muted-foreground">{service.provider}</p>
-            </div>
-          </div>
-          <Badge variant="secondary" className="text-xs">
-            {service.location}
+  const ServiceCard = ({ service }: { service: ProviderService }) => {
+    // Map backend categories to icons
+    const getIcon = (category: string) => {
+      switch (category.toLowerCase()) {
+        case "dance":
+        case "traditional-troupe": return <Users className="h-6 w-6" />;
+        case "music":
+        case "music-band": return <Music className="h-6 w-6" />;
+        case "food":
+        case "catering": return <Utensils className="h-6 w-6" />;
+        case "venue": return <MapPin className="h-6 w-6" />;
+        case "mc": return <Mic className="h-6 w-6" />;
+        case "decor":
+        case "decoration": return <Palette className="h-6 w-6" />;
+        default: return <Star className="h-6 w-6" />;
+      }
+    };
+
+    return (
+      <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+        <div className="aspect-video bg-muted/20 rounded-t-lg overflow-hidden relative">
+          <img
+            src={service.gallery?.[0] || "/placeholder.svg"}
+            alt={service.name}
+            className="w-full h-full object-cover"
+          />
+          <Badge variant="secondary" className="absolute top-2 right-2 backdrop-blur-md bg-white/70 shadow-sm border-none">
+            {service.location || "Rwanda"}
           </Badge>
         </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <CardDescription className="mb-3">{service.description}</CardDescription>
-
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-1">
-            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            <span className="text-sm font-medium">{service.rating}</span>
-            <span className="text-sm text-muted-foreground">({service.reviews})</span>
+        <CardHeader className="pb-3 flex-none">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center space-x-2 min-w-0">
+              <div className="text-primary flex-shrink-0">{getIcon(service.category)}</div>
+              <div className="min-w-0">
+                <CardTitle className="text-lg truncate">{service.name}</CardTitle>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                  {service.category}
+                </p>
+              </div>
+            </div>
           </div>
-          <span className="font-semibold text-primary">{service.price}</span>
-        </div>
+        </CardHeader>
+        <CardContent className="pt-0 flex-1 flex flex-col">
+          <CardDescription className="mb-4 line-clamp-2 min-h-[2.5rem]">
+            {service.description || "Top rated wedding service in Rwanda."}
+          </CardDescription>
 
-        <div className="flex gap-2">
-          <Link href={`/services/${service.id}`} className="flex-1">
-            <Button variant="outline" className="w-full">View Details</Button>
-          </Link>
-          <Link href={`/booking/${service.id}`} className="flex-1">
-            <Button className="w-full">Book Now</Button>
-          </Link>
-        </div>
-      </CardContent>
-    </Card>
-  )
+          <div className="flex items-center justify-between mb-4 mt-auto">
+            <div className="flex items-center space-x-1">
+              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+              <span className="text-sm font-medium">{service.rating.toFixed(1)}</span>
+              <span className="text-sm text-muted-foreground">({service.bookings_count})</span>
+            </div>
+            <div className="text-right">
+              <span className="text-xs text-muted-foreground block">Price starts</span>
+              <span className="font-bold text-primary">
+                {service.price_range_min ? `${service.price_range_min.toLocaleString()} RWF` : "Contact"}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Link href={`/services/${service.id}`} className="flex-1">
+              <Button variant="outline" className="w-full h-9">View Details</Button>
+            </Link>
+            <Link href={`/booking/${service.id}`} className="flex-1">
+              <Button className="w-full h-9 shadow-sm">Book</Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#eff4fa]">
@@ -268,11 +228,26 @@ export default function ServicesPage() {
               )}
 
               {/* Services Grid */}
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {getServicesForCategory(category.value).map((service) => (
-                  <ServiceCard key={service.id} service={service} />
-                ))}
-              </div>
+              {isLoading ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <Card key={i} className="h-[400px] animate-pulse">
+                      <div className="aspect-video bg-muted rounded-t-lg" />
+                      <div className="p-6 space-y-4">
+                        <div className="h-6 bg-muted rounded w-3/4" />
+                        <div className="h-4 bg-muted rounded w-1/2" />
+                        <div className="h-20 bg-muted rounded" />
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {getServicesForCategory(category.value).map((service) => (
+                    <ServiceCard key={service.id} service={service} />
+                  ))}
+                </div>
+              )}
 
               {/* Empty State */}
               {getServicesForCategory(category.value).length === 0 && (
@@ -303,15 +278,15 @@ export default function ServicesPage() {
           key={service.id}
           service={{
             id: service.id,
-            title: service.title,
-            provider: service.provider,
-            description: service.description,
-            price: service.price,
+            title: service.name,
+            provider: "Verified Provider", // Backend doesn't return provider name directly in list yet
+            description: service.description || "",
+            price: service.price_range_min ? `From ${service.price_range_min} RWF` : "Contact",
             rating: service.rating,
-            reviews: service.reviews,
-            location: service.location,
+            reviews: service.bookings_count,
+            location: service.location || "Rwanda",
             category: service.category,
-            image: service.image,
+            image: service.gallery?.[0] || "",
           }}
         />
       ))}

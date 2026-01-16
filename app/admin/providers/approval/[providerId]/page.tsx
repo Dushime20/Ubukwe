@@ -18,8 +18,7 @@ export default function ProviderApprovalDetailPage({ params }: { params: { provi
     id: params.providerId,
     businessName: "Amahoro Dance Troupe",
     businessType: "sole-proprietor",
-    firstName: "Marie",
-    lastName: "Uwimana",
+    fullName: "Marie Uwimana",
     email: "contact@amahoro.rw",
     phone: "+250788123456",
     address: "KG 123 St, Kigali",
@@ -140,7 +139,7 @@ export default function ProviderApprovalDetailPage({ params }: { params: { provi
                     <div>
                       <p className="text-sm text-muted-foreground">Contact Person</p>
                       <p className="font-semibold">
-                        {application.firstName} {application.lastName}
+                        {application.fullName}
                       </p>
                     </div>
                   </div>
@@ -298,11 +297,10 @@ export default function ProviderApprovalDetailPage({ params }: { params: { provi
 
                 {approvalDecision && (
                   <div
-                    className={`p-3 rounded-lg ${
-                      approvalDecision === "approved"
+                    className={`p-3 rounded-lg ${approvalDecision === "approved"
                         ? "bg-green-50 border border-green-200 text-green-900"
                         : "bg-red-50 border border-red-200 text-red-900"
-                    }`}
+                      }`}
                   >
                     <p className="text-sm font-medium">
                       Decision: {approvalDecision === "approved" ? "Approved" : "Rejected"}

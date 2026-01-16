@@ -3,30 +3,47 @@ import { apiClient, API_ENDPOINTS, LoginRequest, RegisterRequest, AuthResponse, 
 // Authentication API functions
 export const authApi = {
   // Register a new user
-  async register(data: RegisterRequest): Promise<AuthResponse> {
-    const response = await apiClient.post<AuthResponse['data']>(
+  async register(data: RegisterRequest): Promise<any> {
+    const backendData = {
+      username: data.email.split('@')[0], // Fallback username
+      email: data.email,
+      password: data.password,
+      full_name: data.full_name,
+      role: data.role === 'service_provider' ? 'service_provider' : 'event_owner',
+      phone_number: data.phone,
+    };
+
+    const response = await apiClient.post<AuthResponse>(
       API_ENDPOINTS.AUTH.REGISTER,
-      data
+      backendData
     );
     
     return {
       status: 'success',
-      message: response.message,
-      data: response.data!,
+      message: 'Registration successful',
+      data: {
+        user: response.data?.user,
+        accessToken: response.data?.access_token,
+        refreshToken: response.data?.refresh_token,
+      },
     };
   },
 
   // Login user
-  async login(data: LoginRequest): Promise<AuthResponse> {
-    const response = await apiClient.post<AuthResponse['data']>(
+  async login(data: LoginRequest): Promise<any> {
+    const response = await apiClient.post<AuthResponse>(
       API_ENDPOINTS.AUTH.LOGIN,
       data
     );
     
     return {
       status: 'success',
-      message: response.message,
-      data: response.data!,
+      message: 'Login successful',
+      data: {
+        user: response.data?.user,
+        accessToken: response.data?.access_token,
+        refreshToken: response.data?.refresh_token,
+      },
     };
   },
 
@@ -37,17 +54,21 @@ export const authApi = {
   },
 
   // Refresh access token
-  async refreshToken(): Promise<AuthResponse> {
+  async refreshToken(): Promise<any> {
     const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
-    const response = await apiClient.post<AuthResponse['data']>(
+    const response = await apiClient.post<AuthResponse>(
       API_ENDPOINTS.AUTH.REFRESH_TOKEN,
-      { refreshToken }
+      { refreshToken: refreshToken }
     );
     
     return {
       status: 'success',
-      message: response.message,
-      data: response.data!,
+      message: 'Token refreshed',
+      data: {
+        user: response.data?.user,
+        accessToken: response.data?.access_token,
+        refreshToken: response.data?.refresh_token,
+      },
     };
   },
 

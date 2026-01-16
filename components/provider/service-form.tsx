@@ -33,7 +33,7 @@ interface GalleryItem {
   preview?: string // For local preview
 }
 
-interface ServiceFormData {
+export interface ServiceFormData {
   // Basic Info
   name: string
   category: string
@@ -42,17 +42,17 @@ interface ServiceFormData {
   specialties: string[]
   priceRangeMin: string
   priceRangeMax: string
-  
+
   // Gallery
   gallery: GalleryItem[]
-  
+
   // Packages
   packages: ServicePackage[]
-  
+
   // Contact (for About tab)
   phone: string
   email: string
-  
+
   // Status
   status: "draft" | "active"
   verified: boolean
@@ -71,7 +71,7 @@ export function ServiceForm({ initialData, onSave, onCancel }: ServiceFormProps)
   const [currentFeature, setCurrentFeature] = useState<{ packageId: string; feature: string }>({ packageId: "", feature: "" })
   const [isPackageDialogOpen, setIsPackageDialogOpen] = useState(false)
   const [editingPackage, setEditingPackage] = useState<ServicePackage | null>(null)
-  
+
   const [formData, setFormData] = useState<ServiceFormData>({
     name: initialData?.name || "",
     category: initialData?.category || "Entertainment",
@@ -89,7 +89,7 @@ export function ServiceForm({ initialData, onSave, onCancel }: ServiceFormProps)
   })
 
   const categories = [
-    "Entertainment", "Venue", "Food", "Decor", "Photography", 
+    "Entertainment", "Venue", "Food", "Decor", "Photography",
     "Transportation", "Beauty", "Music", "Other"
   ]
 
@@ -119,7 +119,7 @@ export function ServiceForm({ initialData, onSave, onCancel }: ServiceFormProps)
     if (!files || files.length === 0) return
 
     const newItems: GalleryItem[] = []
-    
+
     Array.from(files).forEach((file) => {
       // Validate file type
       if (type === "image" && !file.type.startsWith("image/")) {
@@ -139,7 +139,7 @@ export function ServiceForm({ initialData, onSave, onCancel }: ServiceFormProps)
       }
 
       const preview = type === "image" ? URL.createObjectURL(file) : undefined
-      
+
       const newItem: GalleryItem = {
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
         type,
@@ -147,7 +147,7 @@ export function ServiceForm({ initialData, onSave, onCancel }: ServiceFormProps)
         file,
         preview
       }
-      
+
       newItems.push(newItem)
     })
 
@@ -215,8 +215,8 @@ export function ServiceForm({ initialData, onSave, onCancel }: ServiceFormProps)
     if (!feature.trim()) return
     setFormData({
       ...formData,
-      packages: formData.packages.map(p => 
-        p.id === packageId 
+      packages: formData.packages.map(p =>
+        p.id === packageId
           ? { ...p, features: [...p.features, feature.trim()] }
           : p
       )
@@ -227,8 +227,8 @@ export function ServiceForm({ initialData, onSave, onCancel }: ServiceFormProps)
   const removePackageFeature = (packageId: string, featureIndex: number) => {
     setFormData({
       ...formData,
-      packages: formData.packages.map(p => 
-        p.id === packageId 
+      packages: formData.packages.map(p =>
+        p.id === packageId
           ? { ...p, features: p.features.filter((_, i) => i !== featureIndex) }
           : p
       )
@@ -281,9 +281,9 @@ export function ServiceForm({ initialData, onSave, onCancel }: ServiceFormProps)
       alert("Please fill in all required fields (Name, Category, Location, Description)")
       return
     }
-    
+
     const finalData = status ? { ...formData, status } : formData
-    
+
     if (onSave) {
       onSave(finalData)
     } else {
@@ -322,40 +322,37 @@ export function ServiceForm({ initialData, onSave, onCancel }: ServiceFormProps)
           <div className="space-y-4">
             {/* Progress Bar */}
             <Progress value={(currentStep / totalSteps) * 100} className="h-2" />
-            
+
             {/* Step Indicators */}
             <div className="flex items-center justify-between">
               {stepLabels.map((label, index) => {
                 const stepNum = index + 1
                 const isCompleted = stepNum < currentStep
                 const isCurrent = stepNum === currentStep
-                
+
                 return (
                   <div key={stepNum} className="flex items-center flex-1">
                     <div className="flex flex-col items-center flex-1">
-                      <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all ${
-                        isCompleted
+                      <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all ${isCompleted
                           ? "bg-primary border-primary text-primary-foreground"
                           : isCurrent
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-muted-foreground bg-background text-muted-foreground"
-                      }`}>
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-muted-foreground bg-background text-muted-foreground"
+                        }`}>
                         {isCompleted ? (
                           <CheckCircle className="w-5 h-5" />
                         ) : (
                           <span className="font-semibold">{stepNum}</span>
                         )}
                       </div>
-                      <span className={`text-xs mt-2 text-center ${
-                        isCurrent ? "font-semibold text-foreground" : "text-muted-foreground"
-                      }`}>
+                      <span className={`text-xs mt-2 text-center ${isCurrent ? "font-semibold text-foreground" : "text-muted-foreground"
+                        }`}>
                         {label}
                       </span>
                     </div>
                     {stepNum < totalSteps && (
-                      <ChevronRight className={`w-6 h-6 mx-2 ${
-                        isCompleted ? "text-primary" : "text-muted-foreground"
-                      }`} />
+                      <ChevronRight className={`w-6 h-6 mx-2 ${isCompleted ? "text-primary" : "text-muted-foreground"
+                        }`} />
                     )}
                   </div>
                 )
@@ -439,7 +436,7 @@ export function ServiceForm({ initialData, onSave, onCancel }: ServiceFormProps)
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">
-                Will display as: {formData.priceRangeMin && formData.priceRangeMax 
+                Will display as: {formData.priceRangeMin && formData.priceRangeMax
                   ? `${Number(formData.priceRangeMin).toLocaleString()} - ${Number(formData.priceRangeMax).toLocaleString()} RWF`
                   : "Price range will appear here"}
               </p>
@@ -630,16 +627,16 @@ export function ServiceForm({ initialData, onSave, onCancel }: ServiceFormProps)
                     className="hidden"
                     onChange={(e) => handleFileUpload(e, "video")}
                   />
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     type="button"
                     onClick={() => addGalleryItem("image")}
                   >
                     <ImageIcon className="w-4 h-4 mr-2" />
                     Add Images
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     type="button"
                     onClick={() => addGalleryItem("video")}
                   >
@@ -657,16 +654,16 @@ export function ServiceForm({ initialData, onSave, onCancel }: ServiceFormProps)
                     <p className="mb-2">No gallery items yet</p>
                     <p className="text-sm">Upload images or videos to showcase your service</p>
                     <div className="flex gap-2 justify-center mt-4">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => addGalleryItem("image")}
                       >
                         <ImageIcon className="w-4 h-4 mr-2" />
                         Upload Images
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => addGalleryItem("video")}
                       >
@@ -705,7 +702,7 @@ export function ServiceForm({ initialData, onSave, onCancel }: ServiceFormProps)
                               <ImageIcon className="w-12 h-12 opacity-50" />
                             </div>
                           )}
-                          
+
                           <button
                             type="button"
                             onClick={() => removeGalleryItem(item.id)}
@@ -714,11 +711,11 @@ export function ServiceForm({ initialData, onSave, onCancel }: ServiceFormProps)
                           >
                             <X className="w-4 h-4" />
                           </button>
-                          
+
                           <Badge className="absolute bottom-2 left-2 text-xs capitalize bg-black/70 text-white border-none">
                             {item.type}
                           </Badge>
-                          
+
                           {item.file && (
                             <div className="absolute top-2 left-2 max-w-[60%]">
                               <p className="text-xs text-white bg-black/70 px-2 py-1 rounded truncate" title={item.file.name}>
@@ -729,18 +726,18 @@ export function ServiceForm({ initialData, onSave, onCancel }: ServiceFormProps)
                         </div>
                       ))}
                     </div>
-                    
+
                     <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => addGalleryItem("image")}
                       >
                         <ImageIcon className="w-4 h-4 mr-2" />
                         Add More Images
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => addGalleryItem("video")}
                       >
@@ -751,7 +748,7 @@ export function ServiceForm({ initialData, onSave, onCancel }: ServiceFormProps)
                   </>
                 )}
               </div>
-              
+
               <div className="mt-6 p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm text-muted-foreground mb-2">
                   <strong>Upload Guidelines:</strong>

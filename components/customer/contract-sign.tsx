@@ -22,7 +22,7 @@ export function CustomerContractSign() {
     router.push("/customer/dashboard?tab=contracts", { scroll: false })
   }
 
-  if (!contractId) {
+  if (!contract) {
     return (
       <Card>
         <CardHeader>

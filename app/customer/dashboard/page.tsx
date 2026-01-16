@@ -18,22 +18,42 @@ import { MessagesHub } from "@/components/dashboard/messages-hub";
 import { WeddingInspiration } from "@/components/dashboard/wedding-inspiration";
 import { ComingSoon } from "@/components/ui/coming-soon";
 import { useAuth } from "@/hooks/useAuth";
+import { DashboardHeader } from "@/components/ui/dashboard-header";
 import { CustomerQuotes } from "@/components/customer/quotes";
 import { CustomerContractsView } from "@/components/customer/contracts-view";
 import { CustomerDisputesView } from "@/components/customer/disputes-view";
 import { ReviewForm } from "@/components/reviews/review-form";
 import { CustomerBookingWizard } from "@/components/customer/booking-wizard";
 import { CustomerContractSign } from "@/components/customer/contract-sign";
+import { WeddingTasks } from "@/components/customer/wedding-tasks";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient, API_ENDPOINTS, Wedding } from "@/lib/api";
+import { Loader2 } from "lucide-react";
 
 export default function CustomerDashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabFromUrl = searchParams.get("tab") || "overview";
-  
+
   const [activeTab, setActiveTab] = useState(tabFromUrl);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, logout } = useAuth();
+
+  const { data: weddingResponse, isLoading: isWeddingLoading } = useQuery({
+    queryKey: ["wedding-me"],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get<Wedding>(API_ENDPOINTS.WEDDING.ME);
+        return response.data;
+      } catch (err: any) {
+        if (err.message.includes("404")) return null;
+        throw err;
+      }
+    }
+  });
+
+  const currentWedding = weddingResponse || null;
 
   // Sync URL with activeTab
   useEffect(() => {
@@ -49,15 +69,24 @@ export default function CustomerDashboard() {
     router.push(`/customer/dashboard?tab=${tab}`, { scroll: false });
   };
 
-  // Mock wedding data
-  const weddingDetails = {
-    coupleName: "Marie & Jean",
-    weddingDate: "2024-06-15",
-    venue: "Kigali Serena Hotel",
-    guestCount: 150,
-    budget: 5000000, // RWF
-    spent: 2800000,
+  // Placeholder/Fallback wedding data
+  const fallbackWedding = {
+    coupleName: "Set Wedding Names",
+    weddingDate: "",
+    venue: "Not set",
+    guestCount: 0,
+    budget: 0,
+    spent: 0,
   };
+
+  const displayWedding = currentWedding ? {
+    coupleName: currentWedding.couple_name,
+    weddingDate: currentWedding.wedding_date,
+    venue: currentWedding.venue || "Not set",
+    guestCount: currentWedding.guest_count,
+    budget: Number(currentWedding.budget),
+    spent: Number(currentWedding.spent)
+  } : fallbackWedding;
 
   const planningProgress = {
     completed: 8,
@@ -144,7 +173,7 @@ export default function CustomerDashboard() {
       case "overview":
         return (
           <Overview
-            weddingDetails={weddingDetails}
+            weddingDetails={displayWedding}
             planningProgress={planningProgress}
             checklist={checklist}
             recommendedServices={recommendedServices}
@@ -155,7 +184,7 @@ export default function CustomerDashboard() {
         return <VendorMarketplace />;
 
       case "planning":
-        return <ComprehensivePlanning />;
+        return <WeddingTasks />;
 
       case "guests":
         return <GuestManagement />;
@@ -206,17 +235,16 @@ export default function CustomerDashboard() {
   return (
     <div className="min-h-screen bg-[#f9fafc]">
       {/* Desktop Sidebar */}
-      <DashboardSidebar 
+      <DashboardSidebar
         activeTab={activeTab}
         onTabChange={handleTabChange}
         userRole="Customer"
         isCollapsed={isSidebarCollapsed}
         onToggle={toggleSidebar}
         user={user ? {
-          firstName: user.firstName,
-          lastName: user.lastName,
+          full_name: user.full_name || user.username,
           email: user.email,
-          avatar: user.profilePicture
+          avatar: user.profile_image_url
         } : undefined}
         onLogout={logout}
       />
@@ -241,7 +269,7 @@ export default function CustomerDashboard() {
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
               </div>
-              
+
               <nav className="flex-1 overflow-y-auto space-y-3 pt-2">
                 {[
                   {
@@ -294,11 +322,10 @@ export default function CustomerDashboard() {
                             handleTabChange(tab.id);
                             setIsMobileMenuOpen(false);
                           }}
-                          className={`relative w-full text-left text-sm px-3 py-2.5 rounded-md transition-all duration-200 flex items-center gap-3 ${
-                            activeTab === tab.id
-                              ? "bg-muted text-foreground shadow-sm"
-                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                          }`}
+                          className={`relative w-full text-left text-sm px-3 py-2.5 rounded-md transition-all duration-200 flex items-center gap-3 ${activeTab === tab.id
+                            ? "bg-muted text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                            }`}
                         >
                           <span className={`absolute left-0 top-2 bottom-2 w-1 rounded-full ${activeTab === tab.id ? 'bg-primary' : 'bg-transparent'}`} />
                           <span className="w-4 h-4 flex-shrink-0">{tab.icon}</span>
@@ -316,11 +343,11 @@ export default function CustomerDashboard() {
                     <div className="flex items-center p-3 rounded-lg bg-muted/30 min-w-0">
                       <div className="flex items-center space-x-3 flex-1 min-w-0 overflow-hidden">
                         <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-semibold text-primary flex-shrink-0">
-                          {user.firstName?.[0]}{user.lastName?.[0]}
+                          {user.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || (user.username?.[0] || user.email[0]).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0 overflow-hidden">
                           <p className="text-sm font-medium text-foreground truncate">
-                            {user.firstName} {user.lastName}
+                            {user.full_name || user.username}
                           </p>
                           <p className="text-xs text-muted-foreground truncate">
                             {user.email}
@@ -348,55 +375,23 @@ export default function CustomerDashboard() {
 
       {/* Main Content */}
       <div className={`flex-1 flex flex-col transition-all duration-300 ml-0 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
-        {/* Sticky Header */}
-        <header className="sticky top-0 z-40 border-b bg-white shadow-sm">
-          <div className="p-3 md:p-4">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center space-x-2 md:space-x-4 min-w-0 flex-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleMobileMenu}
-                  className="p-2 hover:bg-muted/50 md:hidden flex-shrink-0"
-                >
-                  <Menu className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleSidebar}
-                  className="p-2 hover:bg-muted/50 hidden md:block flex-shrink-0"
-                >
-                  <Menu className="h-4 w-4" />
-                </Button>
-                <div className="flex items-center space-x-2 min-w-0">
-                  <Heart className="h-5 w-5 md:h-6 md:w-6 text-primary flex-shrink-0" />
-                  <div className="min-w-0">
-                    <h1 className="text-base md:text-lg lg:text-xl font-semibold truncate">{weddingDetails.coupleName}</h1>
-                    <p className="text-xs md:text-sm text-muted-foreground truncate">
-                      {new Date(weddingDetails.weddingDate).toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center space-x-1 md:space-x-2 flex-shrink-0">
-                <Button variant="outline" size="sm" className="hidden sm:flex text-xs md:text-sm">
-                  <MessageCircle className="h-4 w-4 mr-1 md:mr-2" />
-                  <span className="hidden lg:inline">Messages</span>
-                </Button>
-                <Button size="sm" className="text-xs md:text-sm">
-                  <Search className="h-4 w-4 md:mr-2" />
-                  <span className="hidden md:inline">Find Services</span>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </header>
-        
+        <DashboardHeader
+          user={{
+            full_name: user?.full_name || user?.username || "Customer",
+            role: "Event Owner",
+            profile_image_url: user?.profile_image_url
+          }}
+          onLogout={logout}
+          onToggleSidebar={toggleSidebar}
+          onToggleMobileMenu={toggleMobileMenu}
+          title={displayWedding.coupleName}
+          subtitle={displayWedding.weddingDate ? new Date(displayWedding.weddingDate).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          }) : "Set your wedding date"}
+        />
+
         <div className="flex-1 p-3 md:p-4 lg:p-6 xl:p-8 overflow-y-auto">
           {renderContent()}
         </div>

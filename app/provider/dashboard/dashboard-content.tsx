@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Menu, ChevronLeft, Home, Package, BookOpen, MessageSquare, FileText, DollarSign, User, LogOut } from "lucide-react"
 import { ProviderTabsSidebar } from "@/components/ui/provider-tabs-sidebar"
 import { useAuth } from "@/hooks/useAuth"
+import { DashboardHeader } from "@/components/ui/dashboard-header"
 import { ProviderOverview } from "@/components/provider/overview"
 import { ProviderServices } from "@/components/provider/services"
 import { ProviderBookings } from "@/components/provider/bookings"
@@ -26,7 +27,7 @@ export function ProviderDashboardContent() {
   const tabFromUrl = searchParams.get("tab") || "overview"
   const inquiryId = searchParams.get("inquiryId")
   const customerId = searchParams.get("customerId")
-  
+
   const [activeTab, setActiveTab] = useState(tabFromUrl)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -57,17 +58,17 @@ export function ProviderDashboardContent() {
     { id: 3, client: "Grace Mukamana", service: "Traditional Dancers", date: "2024-04-05", status: "completed", amount: 150000 },
   ]
 
-    const services = [
-    { 
-      id: 1, 
-      title: "Traditional Intore Dancers", 
-      category: "Entertainment", 
+  const services = [
+    {
+      id: "1",
+      title: "Traditional Intore Dancers",
+      category: "Entertainment",
       location: "Kigali",
       priceRange: "120,000 - 200,000 RWF",
       priceRangeMin: 120000,
       priceRangeMax: 200000,
-      bookings: 12, 
-      rating: 4.9, 
+      bookings: 12,
+      rating: 4.9,
       status: "active" as const,
       description: "Professional traditional Rwandan dancers specializing in Intore and cultural performances for weddings.",
       specialties: ["Intore Dance", "Cultural Music", "Traditional Costumes"],
@@ -96,48 +97,38 @@ export function ProviderDashboardContent() {
       phone: "+250 788 123 456",
       email: "contact@intoregroup.rw"
     },
-    { 
-      id: 2, 
-      title: "Wedding MC Services", 
-      category: "Entertainment", 
+    {
+      id: "2",
+      title: "Wedding MC Services",
+      category: "Entertainment",
       location: "Kigali",
       priceRange: "80,000 - 120,000 RWF",
       priceRangeMin: 80000,
       priceRangeMax: 120000,
-      bookings: 8, 
-      rating: 4.7, 
+      bookings: 8,
+      rating: 4.7,
       status: "active" as const,
       description: "Bilingual MC specializing in Rwandan wedding ceremonies and cultural traditions.",
       specialties: ["Bilingual Hosting", "Cultural Expertise", "Event Coordination"],
       verified: true,
     },
-    { 
-      id: 3, 
-      title: "Cultural Music Performance", 
-      category: "Entertainment", 
+    {
+      id: "3",
+      title: "Cultural Music Performance",
+      category: "Entertainment",
       location: "Kigali",
       priceRange: "100,000 - 180,000 RWF",
       priceRangeMin: 100000,
       priceRangeMax: 180000,
-      bookings: 4, 
-      rating: 4.8, 
+      bookings: 4,
+      rating: 4.8,
       status: "draft" as const,
       description: "Traditional Rwandan musicians playing authentic instruments for wedding ceremonies.",
       specialties: ["Traditional Instruments", "Live Performances"],
     },
   ]
 
-  const headerUser = {
-    name: "Jean Mukamana",
-    role: "Traditional Dance Provider",
-    avatar: "/rwandan-traditional-dancer.jpg",
-    initials: "JM",
-  }
-
-  const headerActions = [
-    { label: "Messages", icon: <MessageCircle className="h-4 w-4 mr-2" />, variant: "outline" as const },
-    { label: "Add Service", icon: <Plus className="h-4 w-4 mr-2" />, variant: "default" as const },
-  ]
+  // Header logic replaced by DashboardHeader
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed)
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen)
@@ -148,14 +139,14 @@ export function ProviderDashboardContent() {
       case "services": return <ProviderServices services={services} />
       case "bookings": return <ProviderBookings bookings={recentBookings as any} />
       case "inquiries": return (
-        <InquiryManagement 
+        <InquiryManagement
           onSendQuote={(inqId, custId) => {
             router.push(`/provider/dashboard?tab=quotes&inquiryId=${inqId}&customerId=${custId}`, { scroll: false })
           }}
         />
       )
       case "quotes": return <QuoteBuilder customerId={customerId || undefined} inquiryId={inquiryId || undefined} />
-      
+
       case "contracts": return <ProviderContracts />
       case "onboarding": return <ProviderOnboardingForm />
       case "earnings": return <ProviderEarnings recentCompleted={recentBookings.filter((b) => b.status === "completed")} />
@@ -166,13 +157,18 @@ export function ProviderDashboardContent() {
 
   return (
     <div className="min-h-screen bg-[#f9fafc] flex">
-      <ProviderTabsSidebar 
-        activeTab={activeTab} 
+      <ProviderTabsSidebar
+        activeTab={activeTab}
         onTabChange={handleTabChange}
         isCollapsed={isSidebarCollapsed}
         onToggle={toggleSidebar}
-        user={user ? { firstName: user.firstName, lastName: user.lastName, email: user.email, avatar: user.profilePicture } : undefined}
+        user={user ? {
+          full_name: user.full_name || user.username,
+          email: user.email,
+          avatar: user.profile_image_url
+        } : undefined}
         onLogout={logout}
+        isVerified={user?.is_verified}
       />
 
       {isMobileMenuOpen && (
@@ -194,7 +190,7 @@ export function ProviderDashboardContent() {
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
               </div>
-              
+
               <nav className="flex-1 overflow-y-auto space-y-3 pt-2">
                 {[
                   {
@@ -232,24 +228,31 @@ export function ProviderDashboardContent() {
                       {group.title}
                     </h3>
                     <div className="space-y-0.5">
-                      {group.items.map((tab) => (
-                        <button
-                          key={tab.id}
-                          onClick={() => {
-                            handleTabChange(tab.id);
-                            toggleMobileMenu();
-                          }}
-                          className={`relative w-full text-left text-sm px-3 py-2.5 rounded-md transition-all duration-200 flex items-center gap-3 ${
-                            activeTab === tab.id
+                      {group.items.map((tab) => {
+                        const isTabDisabled = !user?.is_verified && !['overview', 'onboarding'].includes(tab.id);
+                        return (
+                          <button
+                            key={tab.id}
+                            disabled={isTabDisabled}
+                            onClick={() => {
+                              if (!isTabDisabled) {
+                                handleTabChange(tab.id);
+                                toggleMobileMenu();
+                              }
+                            }}
+                            className={`relative w-full text-left text-sm px-3 py-2.5 rounded-md transition-all duration-200 flex items-center gap-3 ${activeTab === tab.id
                               ? "bg-muted text-foreground shadow-sm"
-                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                          }`}
-                        >
-                          <span className={`absolute left-0 top-2 bottom-2 w-1 rounded-full ${activeTab === tab.id ? 'bg-primary' : 'bg-transparent'}`} />
-                          <span className="w-4 h-4 flex-shrink-0">{tab.icon}</span>
-                          <span className="font-medium truncate">{tab.label}</span>
-                        </button>
-                      ))}
+                              : isTabDisabled
+                                ? "opacity-50 cursor-not-allowed text-muted-foreground"
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                              }`}
+                          >
+                            <span className={`absolute left-0 top-2 bottom-2 w-1 rounded-full ${activeTab === tab.id ? 'bg-primary' : 'bg-transparent'}`} />
+                            <span className="w-4 h-4 flex-shrink-0">{tab.icon}</span>
+                            <span className="font-medium truncate">{tab.label}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
@@ -261,11 +264,11 @@ export function ProviderDashboardContent() {
                     <div className="flex items-center p-3 rounded-lg bg-muted/30 min-w-0">
                       <div className="flex items-center space-x-3 flex-1 min-w-0 overflow-hidden">
                         <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-semibold text-primary flex-shrink-0">
-                          {user.firstName?.[0]}{user.lastName?.[0]}
+                          {user.full_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || user.username[0].toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0 overflow-hidden">
                           <p className="text-sm font-medium text-foreground truncate">
-                            {user.firstName} {user.lastName}
+                            {user.full_name || user.username}
                           </p>
                           <p className="text-xs text-muted-foreground truncate">
                             {user.email}
@@ -292,55 +295,35 @@ export function ProviderDashboardContent() {
       )}
 
       <div className={`flex-1 flex flex-col transition-all duration-300 ml-0 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
-        <header className="sticky top-0 z-40 border-b bg-white shadow-sm w-full" role="banner">
-          <div className="p-3 md:p-4">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center space-x-2 md:space-x-4 min-w-0 flex-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleMobileMenu}
-                  className="p-2 hover:bg-muted/50 md:hidden flex-shrink-0"
-                  aria-label="Toggle mobile menu"
-                >
-                  <Menu className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleSidebar}
-                  className="p-2 hover:bg-muted/50 hidden md:block flex-shrink-0"
-                  aria-label="Toggle sidebar"
-                >
-                  <Menu className="h-4 w-4" />
-                </Button>
-                <div className="flex items-center space-x-2 md:space-x-3 min-w-0">
-                  <Avatar className="h-7 w-7 md:h-8 md:w-8 flex-shrink-0">
-                    <AvatarImage src={headerUser.avatar} alt={headerUser.name} />
-                    <AvatarFallback className="text-xs">{headerUser.initials}</AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <h1 className="text-base md:text-lg lg:text-xl font-semibold truncate">{headerUser.name}</h1>
-                    <p className="text-xs md:text-sm text-muted-foreground truncate">{headerUser.role}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center space-x-1 md:space-x-2 flex-shrink-0">
-                {headerActions.map((action, index) => (
-                  <Button key={index} variant={action.variant} size="sm" className={`text-xs md:text-sm ${index === 0 ? "hidden sm:flex" : ""}`} aria-label={action.label}>
-                    {action.icon}
-                    <span className="hidden lg:inline">{action.label}</span>
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </header>
+        <DashboardHeader
+          user={{
+            full_name: user?.full_name || user?.username || "Provider",
+            role: "Service Provider",
+            profile_image_url: user?.profile_image_url
+          }}
+          onLogout={logout}
+          onToggleSidebar={toggleSidebar}
+          onToggleMobileMenu={toggleMobileMenu}
+          title="Provider Dashboard"
+          subtitle="Manage your services"
+        />
         <main className="flex-1 p-3 md:p-4 lg:p-6 xl:p-8 overflow-y-auto" role="main">
-          {renderContent()}
+          {!user?.is_verified && activeTab !== "onboarding" && activeTab !== "overview" ? (
+            <div className="flex flex-col items-center justify-center h-full text-center space-y-4 max-w-md mx-auto">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center">
+                <FileText className="w-8 h-8 text-yellow-600" />
+              </div>
+              <h2 className="text-2xl font-bold">Verification Required</h2>
+              <p className="text-muted-foreground">
+                Please complete your onboarding and wait for admin approval to access this feature.
+              </p>
+              <Button onClick={() => handleTabChange("onboarding")}>Go to Onboarding</Button>
+            </div>
+          ) : (
+            renderContent()
+          )}
         </main>
       </div>
     </div>
   )
 }
-
