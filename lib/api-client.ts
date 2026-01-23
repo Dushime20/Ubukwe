@@ -45,27 +45,29 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     // Handle common errors
-    if (error.response?.status === 401) {
-      // Unauthorized - redirect to login
-      if (typeof window !== 'undefined') {
+    if (error.response?.status === 401 || error.response?.status === 203) {
+      // Unauthorized or Non-Authoritative (used as error in backend) - redirect to login
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/signin')) {
         window.location.href = '/auth/signin';
       }
     }
 
     const responseData = error.response?.data;
-    
+
     // Try to extract a meaningful error message
     let errorMessage = 'An unexpected error occurred';
-    
+
     if (responseData) {
       if (typeof responseData === 'string') {
         errorMessage = responseData;
       } else if (typeof responseData === 'object') {
-        if ('message' in responseData && typeof responseData.message === 'string') {
+        if ('detail' in responseData && typeof responseData.detail === 'string') {
+          errorMessage = responseData.detail;
+        } else if ('message' in responseData && typeof responseData.message === 'string') {
           errorMessage = responseData.message;
         } else if ('detail' in responseData) {
-          errorMessage = typeof responseData.detail === 'string' 
-            ? responseData.detail 
+          errorMessage = typeof responseData.detail === 'string'
+            ? responseData.detail
             : JSON.stringify(responseData.detail);
         } else if ('error' in responseData && typeof responseData.error === 'string') {
           errorMessage = responseData.error;

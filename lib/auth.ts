@@ -17,14 +17,14 @@ export const authApi = {
       API_ENDPOINTS.AUTH.REGISTER,
       backendData
     );
-    
+
     return {
       status: 'success',
       message: 'Registration successful',
       data: {
-        user: response.data?.user,
-        accessToken: response.data?.access_token,
-        refreshToken: response.data?.refresh_token,
+        user: response.data?.user || (response as any).user,
+        accessToken: response.data?.access_token || (response as any).access_token,
+        refreshToken: response.data?.refresh_token || (response as any).refresh_token || response.data?.access_token || (response as any).access_token,
       },
     };
   },
@@ -35,14 +35,14 @@ export const authApi = {
       API_ENDPOINTS.AUTH.LOGIN,
       data
     );
-    
+
     return {
       status: 'success',
       message: 'Login successful',
       data: {
-        user: response.data?.user,
-        accessToken: response.data?.access_token,
-        refreshToken: response.data?.refresh_token,
+        user: response.data?.user || (response as any).user,
+        accessToken: response.data?.access_token || (response as any).access_token,
+        refreshToken: response.data?.refresh_token || (response as any).refresh_token || response.data?.access_token || (response as any).access_token,
       },
     };
   },
@@ -60,7 +60,7 @@ export const authApi = {
       API_ENDPOINTS.AUTH.REFRESH_TOKEN,
       { refreshToken: refreshToken }
     );
-    
+
     return {
       status: 'success',
       message: 'Token refreshed',

@@ -25,7 +25,7 @@ export const useAuth = () => {
       if (!tokenManager.isAuthenticated()) {
         return null;
       }
-      
+
       try {
         const response = await authApi.getMe();
         return response.data;
@@ -45,28 +45,43 @@ export const useAuth = () => {
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: authApi.login,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       const { user, accessToken, refreshToken } = data.data;
-      
-      // Store tokens and user data
+
+      // Store tokens
       tokenManager.setTokens(accessToken, refreshToken);
-      userManager.setUser(user);
-      
-      // Update query cache
-      queryClient.setQueryData(authKeys.user(), user);
-      
+
+      let finalUser = user;
+
+      // If user data is missing from login response (common with some backends), fetch it
+      if (!finalUser) {
+        try {
+          const response = await authApi.getMe();
+          finalUser = response.data;
+        } catch (error) {
+          console.error('Failed to fetch user after login:', error);
+        }
+      }
+
+      if (finalUser) {
+        userManager.setUser(finalUser);
+        // Update query cache
+        queryClient.setQueryData(authKeys.user(), finalUser);
+      }
+
       toast.success('Login successful!');
-      
+
       // Redirect to appropriate dashboard based on user role
-      if (user?.role === 'admin') {
+      if (finalUser?.role === 'admin') {
         router.push('/admin/dashboard');
-      } else if (user?.role === 'service_provider') {
+      } else if (finalUser?.role === 'service_provider') {
         router.push('/provider/dashboard');
       } else {
         router.push('/customer/dashboard');
       }
     },
     onError: (error: Error) => {
+      console.error('Login error details:', error);
       toast.error(error.message || 'Login failed');
     },
   });
@@ -76,7 +91,7 @@ export const useAuth = () => {
     mutationFn: authApi.register,
     onSuccess: () => {
       toast.success('Registration successful! Please sign in.');
-      
+
       // Redirect to login page after registration
       router.push('/auth/signin');
     },
@@ -92,10 +107,10 @@ export const useAuth = () => {
       // Clear auth data
       tokenManager.clearTokens();
       userManager.clearUser();
-      
+
       // Clear query cache
       queryClient.clear();
-      
+
       toast.success('Logged out successfully');
       router.push('/auth/signin');
     },
@@ -104,7 +119,7 @@ export const useAuth = () => {
       tokenManager.clearTokens();
       userManager.clearUser();
       queryClient.clear();
-      
+
       toast.error(error.message || 'Logout failed');
       router.push('/auth/signin');
     },
@@ -115,13 +130,13 @@ export const useAuth = () => {
     mutationFn: authApi.updateProfile,
     onSuccess: (data) => {
       const updatedUser = data.data;
-      
+
       // Update user data
       if (updatedUser) {
         userManager.setUser(updatedUser);
         queryClient.setQueryData(authKeys.user(), updatedUser);
       }
-      
+
       toast.success('Profile updated successfully');
     },
     onError: (error: Error) => {
@@ -168,7 +183,7 @@ export const useAuth = () => {
     user,
     isAuthenticated,
     isLoading: isUserLoading,
-    
+
     // Mutations
     login: loginMutation.mutate,
     register: registerMutation.mutate,
@@ -177,7 +192,7 @@ export const useAuth = () => {
     changePassword: changePasswordMutation.mutate,
     forgotPassword: forgotPasswordMutation.mutate,
     resetPassword: resetPasswordMutation.mutate,
-    
+
     // Mutation states
     isLoggingIn: loginMutation.isPending,
     isRegistering: registerMutation.isPending,

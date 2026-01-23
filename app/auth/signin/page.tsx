@@ -48,7 +48,7 @@ export default function SignInPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
       return
     }
@@ -104,47 +104,53 @@ export default function SignInPage() {
                   <p className="text-sm text-red-500">{errors.email}</p>
                 )}
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value)
-                      if (errors.password) {
-                        setErrors(prev => ({ ...prev, password: undefined }))
-                      }
-                    }}
-                    className={errors.password ? 'border-red-500 pr-10' : 'pr-10'}
-                    disabled={isLoggingIn}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={isLoggingIn}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-                {errors.password && (
-                  <p className="text-sm text-red-500">{errors.password}</p>
-                )}
-              </div>
 
-              <Button 
-                type="submit" 
-                className="w-full" 
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-xs text-primary hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    if (errors.password) {
+                      setErrors(prev => ({ ...prev, password: undefined }))
+                    }
+                  }}
+                  className={errors.password ? 'border-red-500 pr-10' : 'pr-10'}
+                  disabled={isLoggingIn}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoggingIn}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              {errors.password && (
+                <p className="text-sm text-red-500">{errors.password}</p>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full"
                 disabled={isLoggingIn}
               >
                 {isLoggingIn ? (

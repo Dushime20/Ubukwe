@@ -192,43 +192,23 @@ axiosInstance.interceptors.request.use(
 // Response interceptor for error handling
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => {
+    // Handle the case where the backend returns 203 as a "success" (Axios doesn't throw)
+    if (response.status === 203) {
+      const errorMessage = response.data?.detail || response.data?.message || 'Authentication failed';
+      return Promise.reject(new Error(errorMessage));
+    }
     return response;
   },
   async (error) => {
-    const originalRequest = error.config;
-
-    // Handle 401 errors (unauthorized)
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        // Try to refresh token
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (refreshToken) {
-          const response = await axiosInstance.post(API_ENDPOINTS.AUTH.REFRESH_TOKEN, {
-            refreshToken,
-          });
-
-          const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-          localStorage.setItem('accessToken', accessToken);
-          localStorage.setItem('refreshToken', newRefreshToken);
-
-          // Retry original request with new token
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          return axiosInstance(originalRequest);
-        }
-      } catch (refreshError) {
-        // Refresh failed, redirect to login
+    // Treat 203 or 401 as an auth error
+    if (error.response?.status === 203 || error.response?.status === 401) {
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/signin')) {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
-        
-        if (typeof window !== 'undefined') {
-          window.location.href = '/auth/signin';
-        }
+        window.location.href = '/auth/signin';
       }
     }
-
     return Promise.reject(error);
   }
 );
@@ -237,28 +217,39 @@ axiosInstance.interceptors.response.use(
 export const apiClient = {
   async request<T>(config: AxiosRequestConfig): Promise<ApiResponse<T>> {
     try {
-      const response = await axiosInstance.request<ApiResponse<T>>(config);
-      return response.data;
+      const response = await axiosInstance.request<any>(config);
+
+      // Handle flat responses vs wrapped responses
+      const responseData = response.data;
+      if (responseData && typeof responseData === 'object' && ('status' in responseData || 'data' in responseData)) {
+        return responseData as ApiResponse<T>;
+      }
+
+      // Fallback for flat responses
+      return {
+        status: 'success',
+        message: 'Request successful',
+        data: responseData as T,
+        statusCode: response.status
+      };
     } catch (error: any) {
       const responseData = error.response?.data;
-      
+
       // Try to extract a meaningful error message
       let errorMessage = 'An unexpected error occurred';
-      
+
       if (responseData) {
         if (typeof responseData === 'string') {
           errorMessage = responseData;
+        } else if (responseData.detail) {
+          errorMessage = typeof responseData.detail === 'string'
+            ? responseData.detail
+            : JSON.stringify(responseData.detail);
         } else if (responseData.message) {
           errorMessage = responseData.message;
-        } else if (responseData.detail) {
-          // FastAPI and some other backends use 'detail'
-          errorMessage = typeof responseData.detail === 'string' 
-            ? responseData.detail 
-            : JSON.stringify(responseData.detail);
         } else if (responseData.error) {
           errorMessage = responseData.error;
         } else if (responseData.errors) {
-          // Handle object-based errors (e.g. {email: ["Already exists"]})
           if (typeof responseData.errors === 'object') {
             const firstErrorKey = Object.keys(responseData.errors)[0];
             const firstErrorVal = responseData.errors[firstErrorKey];
@@ -276,18 +267,18 @@ export const apiClient = {
   },
 
   get<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    return this.request<T>({ ...config, method: 'GET', url });
+    return apiClient.request<T>({ ...config, method: 'GET', url });
   },
 
   post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    return this.request<T>({ ...config, method: 'POST', url, data });
+    return apiClient.request<T>({ ...config, method: 'POST', url, data });
   },
 
   put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    return this.request<T>({ ...config, method: 'PUT', url, data });
+    return apiClient.request<T>({ ...config, method: 'PUT', url, data });
   },
 
   delete<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    return this.request<T>({ ...config, method: 'DELETE', url });
+    return apiClient.request<T>({ ...config, method: 'DELETE', url });
   },
 };
