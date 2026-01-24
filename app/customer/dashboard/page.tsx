@@ -29,6 +29,7 @@ import { WeddingTasks } from "@/components/customer/wedding-tasks";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient, API_ENDPOINTS, Wedding } from "@/lib/api";
 import { Loader2 } from "lucide-react";
+import { TranslatedText } from "@/components/translated-text";
 
 export default function CustomerDashboard() {
   const router = useRouter();
@@ -176,7 +177,6 @@ export default function CustomerDashboard() {
             weddingDetails={displayWedding}
             planningProgress={planningProgress}
             checklist={checklist}
-            recommendedServices={recommendedServices}
           />
         );
 
@@ -257,8 +257,8 @@ export default function CustomerDashboard() {
             <div className="p-4 h-full flex flex-col">
               <div className="mb-4 flex items-center justify-between flex-shrink-0">
                 <div>
-                  <h2 className="text-lg font-bold text-foreground mb-1">Dashboard</h2>
-                  <p className="text-xs text-muted-foreground">Customer Portal</p>
+                  <h2 className="text-lg font-bold text-foreground mb-1"><TranslatedText text="Dashboard" /></h2>
+                  <p className="text-xs text-muted-foreground"><TranslatedText text="Customer Portal" /></p>
                 </div>
                 <Button
                   variant="ghost"
@@ -275,38 +275,38 @@ export default function CustomerDashboard() {
                   {
                     title: "Overview",
                     items: [
-                      { id: "overview", label: "Dashboard", icon: <Home className="w-4 h-4" /> },
+                      { id: "overview", label: <TranslatedText text="Dashboard" />, icon: <Home className="w-4 h-4" /> },
                     ]
                   },
                   {
                     title: "Planning",
                     items: [
-                      { id: "planning", label: "Planning & Timeline", icon: <CheckCircle className="w-4 h-4" /> },
-                      { id: "guests", label: "Guest Management", icon: <Users className="w-4 h-4" /> },
+                      { id: "planning", label: <TranslatedText text="Planning & Timeline" />, icon: <CheckCircle className="w-4 h-4" /> },
+                      { id: "guests", label: <TranslatedText text="Guest Management" />, icon: <Users className="w-4 h-4" /> },
                     ]
                   },
                   {
                     title: "Services & Vendors",
                     items: [
-                      { id: "vendors", label: "Find Vendors", icon: <Star className="w-4 h-4" /> },
+                      { id: "vendors", label: <TranslatedText text="Find Vendors" />, icon: <Star className="w-4 h-4" /> },
                     ]
                   },
                   {
                     title: "Management",
                     items: [
-                      { id: "bookings", label: "My Bookings", icon: <BookOpen className="w-4 h-4" /> },
-                      { id: "budget", label: "Budget Anlyo", icon: <DollarSign className="w-4 h-4" /> },
-                      { id: "messages", label: "Messages", icon: <MessageCircle className="w-4 h-4" /> },
-                      { id: "quotes", label: "Quotes", icon: <FileText className="w-4 h-4" /> },
-                      { id: "contracts", label: "Contracts", icon: <FileText className="w-4 h-4" /> },
-                      { id: "disputes", label: "Disputes", icon: <ShieldAlert className="w-4 h-4" /> },
-                      { id: "reviews", label: "Reviews", icon: <Star className="w-4 h-4" /> },
+                      { id: "bookings", label: <TranslatedText text="My Bookings" />, icon: <BookOpen className="w-4 h-4" /> },
+                      { id: "budget", label: <TranslatedText text="Budget Anlyo" />, icon: <DollarSign className="w-4 h-4" /> },
+                      { id: "messages", label: <TranslatedText text="Messages" />, icon: <MessageCircle className="w-4 h-4" /> },
+                      { id: "quotes", label: <TranslatedText text="Quotes" />, icon: <FileText className="w-4 h-4" /> },
+                      { id: "contracts", label: <TranslatedText text="Contracts" />, icon: <FileText className="w-4 h-4" /> },
+                      { id: "disputes", label: <TranslatedText text="Disputes" />, icon: <ShieldAlert className="w-4 h-4" /> },
+                      { id: "reviews", label: <TranslatedText text="Reviews" />, icon: <Star className="w-4 h-4" /> },
                     ]
                   },
                   {
                     title: "Inspiration",
                     items: [
-                      { id: "inspiration", label: "Wedding Ideas", icon: <Heart className="w-4 h-4" /> },
+                      { id: "inspiration", label: <TranslatedText text="Wedding Ideas" />, icon: <Heart className="w-4 h-4" /> },
                     ]
                   }
                 ].map((group, groupIndex) => (

@@ -49,6 +49,7 @@ export const API_ENDPOINTS = {
     BASE: `/api/${API_VERSION}/wedding`,
     ME: `/api/${API_VERSION}/wedding/me`,
     TASKS: `/api/${API_VERSION}/tasks`,
+    TASK_STATS: `/api/${API_VERSION}/tasks/stats`,
   },
   // Public Service endpoints
   SERVICES: {
@@ -132,8 +133,9 @@ export interface WeddingTask {
   title: string;
   description?: string;
   category?: string;
+  assigned_to?: 'groom' | 'bride' | 'other';
   is_completed: boolean;
-  status: 'pending' | 'completed';
+  status: 'pending' | 'in_progress' | 'completed';
   created_at: string;
   updated_at?: string;
 }

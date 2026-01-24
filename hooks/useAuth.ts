@@ -75,7 +75,12 @@ export const useAuth = () => {
       if (finalUser?.role === 'admin') {
         router.push('/admin/dashboard');
       } else if (finalUser?.role === 'service_provider') {
-        router.push('/provider/dashboard');
+        // Redirect unverified providers to onboarding
+        if (!finalUser?.is_verified) {
+          router.push('/provider/dashboard?tab=onboarding');
+        } else {
+          router.push('/provider/dashboard');
+        }
       } else {
         router.push('/customer/dashboard');
       }

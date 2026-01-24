@@ -7,17 +7,26 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Upload, FileText, CheckCircle, AlertCircle, ArrowRight } from "lucide-react"
+import { Upload, FileText, CheckCircle, AlertCircle, ArrowRight, AlertTriangle } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { apiClient } from "@/lib/api-client"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import Link from "next/link"
+import {
+  validateStep1,
+  validateStep2,
+  validateStep3,
+  validateStep4,
+  validateStep5,
+  ValidationError,
+} from "@/lib/validation/onboarding-schema"
 
 export default function ProviderOnboarding() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [stepErrors, setStepErrors] = useState<ValidationError[]>([])
   const [formData, setFormData] = useState({
     businessName: "",
     businessType: "",
@@ -33,8 +42,10 @@ export default function ProviderOnboarding() {
 
   const [documents, setDocuments] = useState({
     idDocument: null as File | null,
+    selfiePhoto: null as File | null,
     businessLicense: null as File | null,
-    taxDocument: null as File | null,
+    taxCertificate: null as File | null,
+    insuranceCertificate: null as File | null,
     portfolio: [] as File[],
   })
 
@@ -42,8 +53,9 @@ export default function ProviderOnboarding() {
     { id: 1, title: "Business Information", completed: currentStep > 1 },
     { id: 2, title: "Service Details", completed: currentStep > 2 },
     { id: 3, title: "Contact Information", completed: currentStep > 3 },
-    { id: 4, title: "Documents Upload", completed: currentStep > 4 },
-    { id: 5, title: "Review & Submit", completed: false },
+    { id: 4, title: "Identity Verification", completed: currentStep > 4 },
+    { id: 5, title: "Business Documents", completed: currentStep > 5 },
+    { id: 6, title: "Review & Submit", completed: false },
   ]
 
   const handleInputChange = (field: string, value: any) => {
@@ -65,25 +77,84 @@ export default function ProviderOnboarding() {
     }
   }
 
+  const validateCurrentStep = (): boolean => {
+    setStepErrors([])
+    let validation
+
+    switch (currentStep) {
+      case 1:
+        validation = validateStep1({
+          businessName: formData.businessName,
+          businessType: formData.businessType,
+          yearsExperience: formData.yearsExperience,
+        })
+        break
+      case 2:
+        validation = validateStep2({
+          serviceCategories: formData.serviceCategories,
+          description: formData.description,
+        })
+        break
+      case 3:
+        validation = validateStep3({
+          phone: formData.phone,
+          email: formData.email,
+          address: formData.address,
+          city: formData.city,
+          country: formData.country,
+        })
+        break
+      case 4:
+        validation = validateStep4({
+          idDocument: documents.idDocument,
+          selfiePhoto: documents.selfiePhoto,
+        })
+        break
+      case 5:
+        validation = validateStep5({
+          businessLicense: documents.businessLicense,
+          portfolio: documents.portfolio,
+        })
+        break
+      default:
+        return true
+    }
+
+    if (!validation.isValid) {
+      setStepErrors(validation.errors)
+      return false
+    }
+    return true
+  }
+
   const handleNext = () => {
-    if (currentStep < 5) setCurrentStep(currentStep + 1)
+    if (validateCurrentStep() && currentStep < 6) {
+      setCurrentStep(currentStep + 1)
+    }
   }
 
   const handlePrev = () => {
+    setStepErrors([])
     if (currentStep > 1) setCurrentStep(currentStep - 1)
   }
 
   const handleSubmit = async () => {
+    if (!validateCurrentStep()) {
+      return
+    }
     setIsSubmitting(true)
     try {
       // 1. Upload Documents first
       await apiClient.provider.uploadDocuments(
         documents.businessLicense || undefined,
-        documents.portfolio.length > 0 ? documents.portfolio : undefined
+        documents.portfolio.length > 0 ? documents.portfolio : undefined,
+        documents.idDocument || undefined,
+        documents.selfiePhoto || undefined
       )
 
       // 2. Register Team / Complete Onboarding
       const registrationData = {
+        business_name: formData.businessName,
         business_type: formData.businessType,
         years_experience: parseInt(formData.yearsExperience) || 0,
         business_description: formData.description,
@@ -92,6 +163,7 @@ export default function ProviderOnboarding() {
         city: formData.city,
         country: formData.country,
         phone_number: formData.phone,
+        email: formData.email,
         location: `${formData.city}, ${formData.country}`,
         // Backend required fields for register-team
         price_per_session: 0, // Default or placeholder
@@ -111,7 +183,7 @@ export default function ProviderOnboarding() {
     }
   }
 
-  const progress = (currentStep / 5) * 100
+  const progress = (currentStep / 6) * 100
 
   return (
     <div className="min-h-screen bg-[#f9fafc] py-8 px-4">
@@ -154,6 +226,24 @@ export default function ProviderOnboarding() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {stepErrors.length > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <div className="flex gap-3">
+                  <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-semibold text-red-900 mb-2">Please fix the following errors:</h3>
+                    <ul className="space-y-1">
+                      {stepErrors.map((error, idx) => (
+                        <li key={idx} className="text-sm text-red-800">
+                          • {error.message}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Step 1: Business Information */}
             {currentStep === 1 && (
               <div className="space-y-4">
@@ -164,12 +254,16 @@ export default function ProviderOnboarding() {
                     value={formData.businessName}
                     onChange={(e) => handleInputChange("businessName", e.target.value)}
                     placeholder="Enter your business name"
+                    className={stepErrors.some(e => e.field === "businessName") ? "border-red-500" : ""}
                   />
+                  {stepErrors.some(e => e.field === "businessName") && (
+                    <p className="text-sm text-red-600 mt-1">{stepErrors.find(e => e.field === "businessName")?.message}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="businessType">Business Type *</Label>
                   <Select value={formData.businessType} onValueChange={(value) => handleInputChange("businessType", value)}>
-                    <SelectTrigger>
+                    <SelectTrigger className={stepErrors.some(e => e.field === "businessType") ? "border-red-500" : ""}>
                       <SelectValue placeholder="Select business type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -180,6 +274,9 @@ export default function ProviderOnboarding() {
                       <SelectItem value="individual">Individual/Freelancer</SelectItem>
                     </SelectContent>
                   </Select>
+                  {stepErrors.some(e => e.field === "businessType") && (
+                    <p className="text-sm text-red-600 mt-1">{stepErrors.find(e => e.field === "businessType")?.message}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="yearsExperience">Years of Experience *</Label>
@@ -187,7 +284,7 @@ export default function ProviderOnboarding() {
                     value={formData.yearsExperience}
                     onValueChange={(value) => handleInputChange("yearsExperience", value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={stepErrors.some(e => e.field === "yearsExperience") ? "border-red-500" : ""}>
                       <SelectValue placeholder="Select experience level" />
                     </SelectTrigger>
                     <SelectContent>
@@ -197,6 +294,9 @@ export default function ProviderOnboarding() {
                       <SelectItem value="11+">11+ years</SelectItem>
                     </SelectContent>
                   </Select>
+                  {stepErrors.some(e => e.field === "yearsExperience") && (
+                    <p className="text-sm text-red-600 mt-1">{stepErrors.find(e => e.field === "yearsExperience")?.message}</p>
+                  )}
                 </div>
               </div>
             )}
@@ -206,9 +306,12 @@ export default function ProviderOnboarding() {
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="serviceCategories">Service Categories *</Label>
-                  <p className="text-sm text-muted-foreground mb-2">Select all that apply</p>
+                  <p className="text-sm text-muted-foreground mb-2">Select at least one category</p>
+                  {stepErrors.some(e => e.field === "serviceCategories") && (
+                    <p className="text-sm text-red-600 mb-2">{stepErrors.find(e => e.field === "serviceCategories")?.message}</p>
+                  )}
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {["Photography", "Venue", "Catering", "Music", "Decoration", "Transportation", "MC Services", "Dance", "Other"].map(
+                    {["Photography", "Venue", "Catering", "Music", "Decoration", "Transportation", "MC Services", "Dance", "Other", ...formData.serviceCategories.filter(cat => !["Photography", "Venue", "Catering", "Music", "Decoration", "Transportation", "MC Services", "Dance", "Other"].includes(cat))].map(
                       (cat) => (
                         <Button
                           key={cat}
@@ -226,6 +329,38 @@ export default function ProviderOnboarding() {
                       )
                     )}
                   </div>
+                  <div className="mt-3">
+                    <Label htmlFor="customCategory">Custom Category</Label>
+                    <div className="flex gap-2 mt-1">
+                      <Input
+                        id="customCategory"
+                        placeholder="Enter custom category"
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            const value = e.currentTarget.value.trim()
+                            if (value && !formData.serviceCategories.includes(value)) {
+                              handleInputChange("serviceCategories", [...formData.serviceCategories, value])
+                              e.currentTarget.value = ''
+                            }
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={(e) => {
+                          const input = e.currentTarget.previousElementSibling as HTMLInputElement
+                          const value = input.value.trim()
+                          if (value && !formData.serviceCategories.includes(value)) {
+                            handleInputChange("serviceCategories", [...formData.serviceCategories, value])
+                            input.value = ''
+                          }
+                        }}
+                      >
+                        Add
+                      </Button>
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="description">Business Description *</Label>
@@ -235,8 +370,14 @@ export default function ProviderOnboarding() {
                     onChange={(e) => handleInputChange("description", e.target.value)}
                     placeholder="Describe your services, experience, and what makes you unique..."
                     rows={6}
+                    className={stepErrors.some(e => e.field === "description") ? "border-red-500" : ""}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">{formData.description.length}/500 characters</p>
+                  <div className="flex justify-between items-center mt-1">
+                    <p className="text-xs text-muted-foreground">{formData.description.length}/500 characters</p>
+                    {stepErrors.some(e => e.field === "description") && (
+                      <p className="text-sm text-red-600">{stepErrors.find(e => e.field === "description")?.message}</p>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -253,7 +394,11 @@ export default function ProviderOnboarding() {
                       value={formData.phone}
                       onChange={(e) => handleInputChange("phone", e.target.value)}
                       placeholder="+250 XXX XXX XXX"
+                      className={stepErrors.some(e => e.field === "phone") ? "border-red-500" : ""}
                     />
+                    {stepErrors.some(e => e.field === "phone") && (
+                      <p className="text-sm text-red-600 mt-1">{stepErrors.find(e => e.field === "phone")?.message}</p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="email">Email Address *</Label>
@@ -263,7 +408,11 @@ export default function ProviderOnboarding() {
                       value={formData.email}
                       onChange={(e) => handleInputChange("email", e.target.value)}
                       placeholder="your@email.com"
+                      className={stepErrors.some(e => e.field === "email") ? "border-red-500" : ""}
                     />
+                    {stepErrors.some(e => e.field === "email") && (
+                      <p className="text-sm text-red-600 mt-1">{stepErrors.find(e => e.field === "email")?.message}</p>
+                    )}
                   </div>
                 </div>
                 <div>
@@ -273,7 +422,11 @@ export default function ProviderOnboarding() {
                     value={formData.address}
                     onChange={(e) => handleInputChange("address", e.target.value)}
                     placeholder="Enter your business address"
+                    className={stepErrors.some(e => e.field === "address") ? "border-red-500" : ""}
                   />
+                  {stepErrors.some(e => e.field === "address") && (
+                    <p className="text-sm text-red-600 mt-1">{stepErrors.find(e => e.field === "address")?.message}</p>
+                  )}
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
@@ -283,12 +436,16 @@ export default function ProviderOnboarding() {
                       value={formData.city}
                       onChange={(e) => handleInputChange("city", e.target.value)}
                       placeholder="City"
+                      className={stepErrors.some(e => e.field === "city") ? "border-red-500" : ""}
                     />
+                    {stepErrors.some(e => e.field === "city") && (
+                      <p className="text-sm text-red-600 mt-1">{stepErrors.find(e => e.field === "city")?.message}</p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="country">Country *</Label>
                     <Select value={formData.country} onValueChange={(value) => handleInputChange("country", value)}>
-                      <SelectTrigger>
+                      <SelectTrigger className={stepErrors.some(e => e.field === "country") ? "border-red-500" : ""}>
                         <SelectValue placeholder="Select country" />
                       </SelectTrigger>
                       <SelectContent>
@@ -298,39 +455,81 @@ export default function ProviderOnboarding() {
                         <SelectItem value="tanzania">Tanzania</SelectItem>
                       </SelectContent>
                     </Select>
+                    {stepErrors.some(e => e.field === "country") && (
+                      <p className="text-sm text-red-600 mt-1">{stepErrors.find(e => e.field === "country")?.message}</p>
+                    )}
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Step 4: Documents Upload */}
+            {/* Step 4: Identity Verification */}
             {currentStep === 4 && (
               <div className="space-y-6">
-                <div>
-                  <Label>Government ID Document *</Label>
-                  <p className="text-sm text-muted-foreground mb-2">Upload a clear photo of your ID (National ID, Passport, or Driver's License)</p>
-                  <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                    <input
-                      type="file"
-                      id="idDocument"
-                      accept="image/*,.pdf"
-                      onChange={(e) => handleFileUpload("idDocument", e.target.files)}
-                      className="hidden"
-                    />
-                    <label htmlFor="idDocument" className="cursor-pointer">
-                      <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-sm font-medium">Click to upload or drag and drop</p>
-                      <p className="text-xs text-muted-foreground">PNG, JPG, PDF up to 5MB</p>
-                    </label>
-                    {documents.idDocument && (
-                      <div className="mt-2 flex items-center justify-center gap-2 text-sm">
-                        <FileText className="w-4 h-4" />
-                        {documents.idDocument.name}
-                      </div>
-                    )}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <p className="text-sm text-blue-900">
+                    <strong>Identity Verification:</strong> Please upload both your National ID and a clear selfie photo. These will be used to verify your identity.
+                  </p>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <Label>National ID Document *</Label>
+                    <p className="text-sm text-muted-foreground mb-2">Upload a clear photo of your National ID</p>
+                    <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                      <input
+                        type="file"
+                        id="idDocument"
+                        accept="image/*"
+                        onChange={(e) => handleFileUpload("idDocument", e.target.files)}
+                        className="hidden"
+                      />
+                      <label htmlFor="idDocument" className="cursor-pointer">
+                        <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-sm font-medium">Click to upload National ID</p>
+                        <p className="text-xs text-muted-foreground">PNG, JPG up to 5MB</p>
+                      </label>
+                      {documents.idDocument && (
+                        <div className="mt-2 flex items-center justify-center gap-2 text-sm">
+                          <FileText className="w-4 h-4" />
+                          {documents.idDocument.name}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Selfie Photo *</Label>
+                    <p className="text-sm text-muted-foreground mb-2">Take a clear selfie for identity verification</p>
+                    <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                      <input
+                        type="file"
+                        id="selfiePhoto"
+                        accept="image/*"
+                        capture="user"
+                        onChange={(e) => handleFileUpload("selfiePhoto", e.target.files)}
+                        className="hidden"
+                      />
+                      <label htmlFor="selfiePhoto" className="cursor-pointer">
+                        <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-sm font-medium">Click to take selfie</p>
+                        <p className="text-xs text-muted-foreground">PNG, JPG up to 5MB</p>
+                      </label>
+                      {documents.selfiePhoto && (
+                        <div className="mt-2 flex items-center justify-center gap-2 text-sm">
+                          <FileText className="w-4 h-4" />
+                          {documents.selfiePhoto.name}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
+              </div>
+            )}
 
+            {/* Step 5: Business Documents */}
+            {currentStep === 5 && (
+              <div className="space-y-6">
                 <div>
                   <Label>Business License / Registration *</Label>
                   <p className="text-sm text-muted-foreground mb-2">Upload your business registration document</p>
@@ -351,31 +550,6 @@ export default function ProviderOnboarding() {
                       <div className="mt-2 flex items-center justify-center gap-2 text-sm">
                         <FileText className="w-4 h-4" />
                         {documents.businessLicense.name}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Tax Registration Document</Label>
-                  <p className="text-sm text-muted-foreground mb-2">Upload your tax registration (optional but recommended)</p>
-                  <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                    <input
-                      type="file"
-                      id="taxDocument"
-                      accept="image/*,.pdf"
-                      onChange={(e) => handleFileUpload("taxDocument", e.target.files)}
-                      className="hidden"
-                    />
-                    <label htmlFor="taxDocument" className="cursor-pointer">
-                      <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-sm font-medium">Click to upload or drag and drop</p>
-                      <p className="text-xs text-muted-foreground">PNG, JPG, PDF up to 5MB</p>
-                    </label>
-                    {documents.taxDocument && (
-                      <div className="mt-2 flex items-center justify-center gap-2 text-sm">
-                        <FileText className="w-4 h-4" />
-                        {documents.taxDocument.name}
                       </div>
                     )}
                   </div>
@@ -413,8 +587,8 @@ export default function ProviderOnboarding() {
               </div>
             )}
 
-            {/* Step 5: Review & Submit */}
-            {currentStep === 5 && (
+            {/* Step 6: Review & Submit */}
+            {currentStep === 6 && (
               <div className="space-y-6">
                 <div className="bg-muted/50 p-4 rounded-lg space-y-3">
                   <h3 className="font-semibold">Business Information</h3>
@@ -465,7 +639,11 @@ export default function ProviderOnboarding() {
                   <div className="space-y-1 text-sm">
                     <div className="flex items-center gap-2">
                       {documents.idDocument ? <CheckCircle className="w-4 h-4 text-green-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
-                      ID Document {documents.idDocument ? "Uploaded" : "Missing"}
+                      National ID {documents.idDocument ? "Uploaded" : "Missing"}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {documents.selfiePhoto ? <CheckCircle className="w-4 h-4 text-green-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
+                      Selfie Photo {documents.selfiePhoto ? "Uploaded" : "Missing"}
                     </div>
                     <div className="flex items-center gap-2">
                       {documents.businessLicense ? <CheckCircle className="w-4 h-4 text-green-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
@@ -490,7 +668,7 @@ export default function ProviderOnboarding() {
               <Button variant="outline" onClick={handlePrev} disabled={currentStep === 1}>
                 Previous
               </Button>
-              {currentStep < 5 ? (
+              {currentStep < 6 ? (
                 <Button onClick={handleNext}>
                   Next Step <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>

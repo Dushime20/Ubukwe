@@ -119,7 +119,17 @@ export default function ServiceDetailsPage({ params }: { params: { serviceId: st
             videos: [],
             reels: []
         },
-        events: [],
+        events: [] as Array<{
+            id: string;
+            title: string;
+            description: string;
+            type: string;
+            badge?: string;
+            discount?: string;
+            validUntil?: string;
+            date?: string;
+            location?: string;
+        }>,
         contact: {
             phone: "+250 000 000 000",
             email: "contact@provider.rw",
@@ -137,7 +147,16 @@ export default function ServiceDetailsPage({ params }: { params: { serviceId: st
                 total: serviceData.bookings_count || 0,
                 breakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
             },
-            items: []
+            items: [] as Array<{
+                id: string;
+                author: string;
+                avatar: string;
+                rating: number;
+                date: string;
+                comment: string;
+                verified: boolean;
+                helpful: number;
+            }>
         }
     };
 
@@ -291,7 +310,7 @@ export default function ServiceDetailsPage({ params }: { params: { serviceId: st
                                                         </div>
                                                         <Separator />
                                                         <ul className="space-y-2">
-                                                            {pkg.features.map((feature, index) => (
+                                                            {pkg.features.map((feature: string, index: number) => (
                                                                 <li key={index} className="flex items-start gap-2 text-sm">
                                                                     <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
                                                                     <span>{feature}</span>

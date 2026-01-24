@@ -45,6 +45,7 @@ import { AdminDisputes } from "@/components/admin/disputes";
 import { AdminAnalytics } from "@/components/admin/analytics";
 import { useAuth } from "@/hooks/useAuth";
 import { DashboardHeader } from "@/components/ui/dashboard-header"
+import { TranslatedText } from "@/components/translated-text";
 
 export function AdminDashboardContent() {
   const router = useRouter()
@@ -133,8 +134,8 @@ export function AdminDashboardContent() {
             <div className="p-4 h-full flex flex-col">
               <div className="mb-4 flex items-center justify-between flex-shrink-0">
                 <div>
-                  <h2 className="text-lg font-bold text-foreground mb-1">Admin Dashboard</h2>
-                  <p className="text-xs text-muted-foreground">Platform Management</p>
+                  <h2 className="text-lg font-bold text-foreground mb-1"><TranslatedText text="Admin Dashboard" /></h2>
+                  <p className="text-xs text-muted-foreground"><TranslatedText text="Platform Management" /></p>
                 </div>
                 <Button
                   variant="ghost"

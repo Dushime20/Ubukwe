@@ -20,6 +20,7 @@ import { ProviderOnboardingForm } from "@/components/provider/onboarding-form"
 import { ProviderContracts } from "@/components/provider/contracts"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MessageCircle, Plus } from "lucide-react"
+import { TranslatedText } from "@/components/translated-text"
 
 export function ProviderDashboardContent() {
   const router = useRouter()
@@ -178,8 +179,8 @@ export function ProviderDashboardContent() {
             <div className="p-4 h-full flex flex-col">
               <div className="mb-4 flex items-center justify-between flex-shrink-0">
                 <div>
-                  <h2 className="text-lg font-bold text-foreground mb-1">Provider Dashboard</h2>
-                  <p className="text-xs text-muted-foreground">Manage your services</p>
+                  <h2 className="text-lg font-bold text-foreground mb-1"><TranslatedText text="Provider Dashboard" /></h2>
+                  <p className="text-xs text-muted-foreground"><TranslatedText text="Manage your services" /></p>
                 </div>
                 <Button
                   variant="ghost"
@@ -196,30 +197,30 @@ export function ProviderDashboardContent() {
                   {
                     title: "Overview",
                     items: [
-                      { id: "overview", label: "Dashboard", icon: <Home className="w-4 h-4" /> },
-                      { id: "onboarding", label: "Onboarding", icon: <FileText className="w-4 h-4" /> },
+                      { id: "overview", label: <TranslatedText text="Dashboard" />, icon: <Home className="w-4 h-4" /> },
+                      { id: "onboarding", label: <TranslatedText text="Onboarding" />, icon: <FileText className="w-4 h-4" /> },
                     ]
                   },
                   {
                     title: "Services",
                     items: [
-                      { id: "services", label: "My Services", icon: <Package className="w-4 h-4" /> },
-                      { id: "bookings", label: "Bookings", icon: <BookOpen className="w-4 h-4" /> },
+                      { id: "services", label: <TranslatedText text="My Services" />, icon: <Package className="w-4 h-4" /> },
+                      { id: "bookings", label: <TranslatedText text="Bookings" />, icon: <BookOpen className="w-4 h-4" /> },
                     ]
                   },
                   {
                     title: "CRM",
                     items: [
-                      { id: "inquiries", label: "Inquiries", icon: <MessageSquare className="w-4 h-4" /> },
-                      { id: "quotes", label: "Quotes", icon: <FileText className="w-4 h-4" /> },
-                      { id: "contracts", label: "Contracts", icon: <FileText className="w-4 h-4" /> },
+                      { id: "inquiries", label: <TranslatedText text="Inquiries" />, icon: <MessageSquare className="w-4 h-4" /> },
+                      { id: "quotes", label: <TranslatedText text="Quotes" />, icon: <FileText className="w-4 h-4" /> },
+                      { id: "contracts", label: <TranslatedText text="Contracts" />, icon: <FileText className="w-4 h-4" /> },
                     ]
                   },
                   {
                     title: "Business",
                     items: [
-                      { id: "earnings", label: "Earnings", icon: <DollarSign className="w-4 h-4" /> },
-                      { id: "profile", label: "Profile", icon: <User className="w-4 h-4" /> },
+                      { id: "earnings", label: <TranslatedText text="Earnings" />, icon: <DollarSign className="w-4 h-4" /> },
+                      { id: "profile", label: <TranslatedText text="Profile" />, icon: <User className="w-4 h-4" /> },
                     ]
                   }
                 ].map((group) => (
@@ -313,11 +314,11 @@ export function ProviderDashboardContent() {
               <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center">
                 <FileText className="w-8 h-8 text-yellow-600" />
               </div>
-              <h2 className="text-2xl font-bold">Verification Required</h2>
+              <h2 className="text-2xl font-bold"><TranslatedText text="Verification Required" /></h2>
               <p className="text-muted-foreground">
-                Please complete your onboarding and wait for admin approval to access this feature.
+                <TranslatedText text="Please complete your onboarding and wait for admin approval to access this feature." />
               </p>
-              <Button onClick={() => handleTabChange("onboarding")}>Go to Onboarding</Button>
+              <Button onClick={() => handleTabChange("onboarding")}><TranslatedText text="Go to Onboarding" /></Button>
             </div>
           ) : (
             renderContent()

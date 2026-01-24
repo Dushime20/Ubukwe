@@ -5,6 +5,7 @@ import { GeistMono } from "geist/font/mono"
 // import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import { QueryProvider } from "@/components/providers/QueryProvider"
+import { I18nProvider } from "@/contexts/i18n-context"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -29,9 +30,11 @@ export default function RootLayout({
         <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
       </head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        <QueryProvider>
-          <Suspense fallback={null}>{children}</Suspense>
-        </QueryProvider>
+        <I18nProvider>
+          <QueryProvider>
+            <Suspense fallback={null}>{children}</Suspense>
+          </QueryProvider>
+        </I18nProvider>
         {/* <Analytics /> */}
       </body>
     </html>

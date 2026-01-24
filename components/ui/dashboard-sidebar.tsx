@@ -65,25 +65,32 @@ export function DashboardSidebar({ activeTab, onTabChange, userRole = "Customer"
     return state;
   }, []);
 
-  const [expandedGroups, setExpandedGroups] = React.useState<Record<string, boolean>>(() => {
-    if (typeof window === 'undefined') return initialExpanded;
+  const [expandedGroups, setExpandedGroups] = React.useState<Record<string, boolean>>(initialExpanded);
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
     try {
       const saved = window.localStorage.getItem('dashboardSidebarExpanded');
-      return saved ? JSON.parse(saved) : initialExpanded;
+      if (saved) {
+        setExpandedGroups(JSON.parse(saved));
+      }
     } catch {
-      return initialExpanded;
+      // Keep initial state
     }
-  });
+  }, []);
 
   const toggleGroup = (title: string) => {
     setExpandedGroups((prev) => ({ ...prev, [title]: !prev[title] }));
   };
 
   React.useEffect(() => {
-    try {
-      window.localStorage.setItem('dashboardSidebarExpanded', JSON.stringify(expandedGroups));
-    } catch { }
-  }, [expandedGroups]);
+    if (isClient) {
+      try {
+        window.localStorage.setItem('dashboardSidebarExpanded', JSON.stringify(expandedGroups));
+      } catch { }
+    }
+  }, [expandedGroups, isClient]);
 
   const groupIconByTitle: Record<string, React.ReactNode> = {
     "Overview": <Home className="w-4 h-4" />,
@@ -128,7 +135,7 @@ export function DashboardSidebar({ activeTab, onTabChange, userRole = "Customer"
                   <span className="text-foreground/80">{groupIconByTitle[group.title] || null}</span>
                   {group.title}
                 </span>
-                <ChevronDown className={`w-4 h-4 transition-transform ${expandedGroups[group.title] ? '' : '-rotate-90'}`} />
+                <ChevronDown className={`w-4 h-4 transition-transform ${isClient && expandedGroups[group.title] ? '' : '-rotate-90'}`} />
               </button>
             )}
 
@@ -153,7 +160,7 @@ export function DashboardSidebar({ activeTab, onTabChange, userRole = "Customer"
                   </button>
                 );
                 if (isCollapsed) return content;
-                return expandedGroups[group.title] ? content : null;
+                return isClient && expandedGroups[group.title] ? content : null;
               })}
             </div>
           </div>

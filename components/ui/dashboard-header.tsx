@@ -20,6 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface DashboardHeaderProps {
   user: {
@@ -45,6 +46,19 @@ export function DashboardHeader({
   const initials = user.full_name
     ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase()
     : "U";
+  
+  const { language, setLanguage } = useTranslation();
+  
+  const LANGUAGES = [
+    { code: 'en', name: 'English', flag: '🇬🇧' },
+    { code: 'fr', name: 'Français', flag: '🇫🇷' },
+    { code: 'sw', name: 'Kiswahili', flag: '🇰🇪' },
+    { code: 'es', name: 'Español', flag: '🇪🇸' },
+    { code: 'pt', name: 'Português', flag: '🇵🇹' },
+    { code: 'ar', name: 'العربية', flag: '🇸🇦' },
+    { code: 'zh', name: '中文', flag: '🇨🇳' },
+    { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+  ];
 
   return (
     <header className="sticky top-0 z-40 border-b bg-white shadow-sm w-full" role="banner">
@@ -97,12 +111,19 @@ export function DashboardHeader({
                 <Globe className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuLabel>Select Language</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>English (EN)</DropdownMenuItem>
-              <DropdownMenuItem>Français (FR)</DropdownMenuItem>
-              <DropdownMenuItem>Kinyarwanda (RW)</DropdownMenuItem>
+              {LANGUAGES.map(lang => (
+                <DropdownMenuItem 
+                  key={lang.code} 
+                  onClick={() => setLanguage(lang.code)}
+                  className={language === lang.code ? 'bg-accent' : ''}
+                >
+                  <span className="mr-2">{lang.flag}</span>
+                  <span>{lang.name}</span>
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
 

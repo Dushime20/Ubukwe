@@ -12,7 +12,11 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 
 // API Configuration
-const rawBaseUrl = (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://nyurwa-backend.onrender.com').trim();
+if (!process.env.NEXT_PUBLIC_BACKEND_URL) {
+  throw new Error('NEXT_PUBLIC_BACKEND_URL is not defined in .env file');
+}
+
+const rawBaseUrl = process.env.NEXT_PUBLIC_BACKEND_URL.trim();
 // Ensure protocol
 let baseUrl = rawBaseUrl.startsWith('http') ? rawBaseUrl : `https://${rawBaseUrl}`;
 // Clean trailing slashes and redundant /api/v1
@@ -24,7 +28,7 @@ const axiosInstance: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
+  timeout: 30000,
 });
 
 // Request interceptor - Add auth token
@@ -44,6 +48,17 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
+    // Log full error details to console
+    console.error('API Error Details:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      headers: error.response?.headers,
+      requestData: error.config?.data
+    });
+
     // Handle common errors
     if (error.response?.status === 401 || error.response?.status === 203) {
       // Unauthorized or Non-Authoritative (used as error in backend) - redirect to login
@@ -87,6 +102,8 @@ axiosInstance.interceptors.response.use(
       errorMessage = error.message;
     }
 
+    console.error('Extracted Error Message:', errorMessage);
+
     // Create a new error with the extracted message or modify the existing one
     const enhancedError = new Error(errorMessage);
     // Copy original error properties if needed, e.g., response, request, config
@@ -113,10 +130,57 @@ export interface PaginatedResponse<T> {
 
 // API Client Interface
 class ApiClient {
-  // Services API
+  // Authentication API
+  auth = {
+    register: async (data: any) => {
+      return axiosInstance.post<any>('/api/v1/auth/register', data);
+    },
+    login: async (data: any) => {
+      return axiosInstance.post<any>('/api/v1/auth/login', data);
+    },
+    logout: async () => {
+      return axiosInstance.post<any>('/api/v1/auth/logout');
+    },
+    refreshToken: async (refreshToken: string) => {
+      return axiosInstance.post<any>('/api/v1/auth/refresh-token', { refreshToken });
+    },
+    getProfile: async () => {
+      return axiosInstance.get<any>('/api/v1/auth/profile');
+    },
+    updateProfile: async (data: any) => {
+      return axiosInstance.put<any>('/api/v1/auth/profile', data);
+    },
+    changePassword: async (data: any) => {
+      return axiosInstance.put<any>('/api/v1/auth/change-password', data);
+    },
+    forgotPassword: async (email: string) => {
+      return axiosInstance.post<any>('/api/v1/auth/forgot-password', { email });
+    },
+    resetPassword: async (data: any) => {
+      return axiosInstance.post<any>('/api/v1/auth/reset-password', data);
+    },
+    registerTeam: async (data: any) => {
+      return axiosInstance.post<any>('/api/v1/auth/register-team', data);
+    },
+  };
+
+  // Services API (Public)
   services = {
-    getAll: async (params?: { category?: string; search?: string; page?: number }) => {
-      return axiosInstance.get<PaginatedResponse<any>>('/api/v1/provider/services/', { params });
+    getAll: async (params?: { active_only?: boolean }) => {
+      return axiosInstance.get<any[]>('/api/v1/services', { params });
+    },
+    getById: async (id: string) => {
+      return axiosInstance.get<any>(`/api/v1/services/${id}`);
+    },
+    search: async (params?: any) => {
+      return axiosInstance.get<any>('/api/v1/services/search', { params });
+    },
+  };
+
+  // Provider Services API
+  providerServices = {
+    getAll: async (params?: { status?: string }) => {
+      return axiosInstance.get<any[]>('/api/v1/provider/services/', { params });
     },
     getById: async (id: string) => {
       return axiosInstance.get<any>(`/api/v1/provider/services/${id}`);
@@ -130,62 +194,79 @@ class ApiClient {
     delete: async (id: string) => {
       return axiosInstance.delete(`/api/v1/provider/services/${id}`);
     },
+    searchAll: async (params?: { category?: string; location?: string; min_price?: number; max_price?: number }) => {
+      return axiosInstance.get<any[]>('/api/v1/provider/services/search/all', { params });
+    },
   };
 
   // Bookings API
   bookings = {
-    getAll: async () => {
-      return axiosInstance.get<any[]>('/bookings');
+    getAll: async (params?: { role?: string; status?: string }) => {
+      return axiosInstance.get<any[]>('/api/v1/bookings', { params });
     },
     getById: async (id: string) => {
-      return axiosInstance.get<any>(`/bookings/${id}`);
+      return axiosInstance.get<any>(`/api/v1/bookings/${id}`);
     },
     create: async (data: any) => {
-      return axiosInstance.post<any>('/bookings', data);
+      return axiosInstance.post<any>('/api/v1/bookings', data);
     },
     update: async (id: string, data: any) => {
-      return axiosInstance.put<any>(`/bookings/${id}`, data);
+      return axiosInstance.put<any>(`/api/v1/bookings/${id}`, data);
     },
     cancel: async (id: string) => {
-      return axiosInstance.delete(`/bookings/${id}`);
+      return axiosInstance.post<any>(`/api/v1/bookings/${id}/cancel`);
+    },
+    getProviderBookings: async (params?: { status?: string }) => {
+      return axiosInstance.get<any[]>('/api/v1/bookings/provider/bookings', { params });
     },
   };
 
   // Reviews API
   reviews = {
     getByService: async (serviceId: string) => {
-      return axiosInstance.get<any[]>(`/reviews/service/${serviceId}`);
+      return axiosInstance.get<any[]>(`/api/v1/reviews/service/${serviceId}`);
+    },
+    getByUser: async (userId: string, reviewType?: string) => {
+      return axiosInstance.get<any[]>(`/api/v1/reviews/user/${userId}`, { params: { review_type: reviewType } });
+    },
+    getUserRating: async (userId: string) => {
+      return axiosInstance.get<any>(`/api/v1/reviews/user/${userId}/rating`);
     },
     create: async (data: any) => {
-      return axiosInstance.post<any>('/reviews', data);
+      return axiosInstance.post<any>('/api/v1/reviews', data);
     },
     update: async (id: string, data: any) => {
-      return axiosInstance.put<any>(`/reviews/${id}`, data);
+      return axiosInstance.put<any>(`/api/v1/reviews/${id}`, data);
     },
     delete: async (id: string) => {
-      return axiosInstance.delete(`/reviews/${id}`);
+      return axiosInstance.delete(`/api/v1/reviews/${id}`);
     },
   };
 
-  // User API
-  users = {
-    getProfile: async () => {
-      return axiosInstance.get<any>('/api/v1/auth/profile');
+  // Payments API
+  payments = {
+    getAll: async (params?: { role?: string }) => {
+      return axiosInstance.get<any[]>('/api/v1/payments', { params });
     },
-    updateProfile: async (data: any) => {
-      return axiosInstance.put<any>('/api/v1/auth/update-profile', data);
+    getById: async (id: string) => {
+      return axiosInstance.get<any>(`/api/v1/payments/${id}`);
     },
-    uploadAvatar: async (file: File) => {
-      const formData = new FormData();
-      formData.append('avatar', file);
-      return axiosInstance.post<any>('/api/v1/auth/upload-avatar', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+    create: async (data: any) => {
+      return axiosInstance.post<any>('/api/v1/payments', data);
+    },
+    callback: async (id: string, data: any) => {
+      return axiosInstance.post<any>(`/api/v1/payments/${id}/callback`, data);
     },
   };
 
   // Provider API
   provider = {
+    getProfile: async () => {
+      return axiosInstance.get<any>('/api/v1/provider/profile');
+    },
+    updateProfile: async (data: any) => {
+      return axiosInstance.put<any>('/api/v1/provider/profile', data);
+    },
     getOnboardingStatus: async () => {
       return axiosInstance.get<any>('/api/v1/provider/onboarding/status');
     },
@@ -199,8 +280,159 @@ class ApiClient {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
     },
-    registerTeam: async (data: any) => {
-      return axiosInstance.post<any>('/api/v1/auth/register-team', data);
+    // Quotes
+    quotes: {
+      getAll: async (params?: { status?: string }) => {
+        return axiosInstance.get<any[]>('/api/v1/provider/quotes/', { params });
+      },
+      getById: async (id: string) => {
+        return axiosInstance.get<any>(`/api/v1/provider/quotes/${id}`);
+      },
+      create: async (data: any) => {
+        return axiosInstance.post<any>('/api/v1/provider/quotes/', data);
+      },
+      update: async (id: string, data: any) => {
+        return axiosInstance.put<any>(`/api/v1/provider/quotes/${id}`, data);
+      },
+      send: async (id: string) => {
+        return axiosInstance.post<any>(`/api/v1/provider/quotes/${id}/send`);
+      },
+      delete: async (id: string) => {
+        return axiosInstance.delete(`/api/v1/provider/quotes/${id}`);
+      },
+    },
+    // Contracts
+    contracts: {
+      getAll: async (params?: { status?: string }) => {
+        return axiosInstance.get<any[]>('/api/v1/provider/contracts/', { params });
+      },
+      getById: async (id: string) => {
+        return axiosInstance.get<any>(`/api/v1/provider/contracts/${id}`);
+      },
+      create: async (data: any) => {
+        return axiosInstance.post<any>('/api/v1/provider/contracts/', data);
+      },
+      update: async (id: string, data: any) => {
+        return axiosInstance.put<any>(`/api/v1/provider/contracts/${id}`, data);
+      },
+      send: async (id: string) => {
+        return axiosInstance.post<any>(`/api/v1/provider/contracts/${id}/send`);
+      },
+    },
+    // Inquiries
+    inquiries: {
+      getAll: async (params?: { status?: string }) => {
+        return axiosInstance.get<any[]>('/api/v1/provider/inquiries/', { params });
+      },
+      getById: async (id: string) => {
+        return axiosInstance.get<any>(`/api/v1/provider/inquiries/${id}`);
+      },
+      update: async (id: string, data: any) => {
+        return axiosInstance.put<any>(`/api/v1/provider/inquiries/${id}`, data);
+      },
+    },
+    // Availability
+    availability: {
+      getAll: async () => {
+        return axiosInstance.get<any[]>('/api/v1/provider/availability/');
+      },
+      addBlock: async (data: any) => {
+        return axiosInstance.post<any>('/api/v1/provider/availability/block', data);
+      },
+      removeBlock: async (id: string) => {
+        return axiosInstance.delete(`/api/v1/provider/availability/block/${id}`);
+      },
+    },
+    // Assets
+    assets: {
+      getAll: async () => {
+        return axiosInstance.get<any[]>('/api/v1/provider/assets/');
+      },
+      upload: async (file: File, fileType: string = 'image') => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('file_type', fileType);
+        return axiosInstance.post<any>('/api/v1/provider/assets/', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      },
+      delete: async (id: string) => {
+        return axiosInstance.delete(`/api/v1/provider/assets/${id}`);
+      },
+    },
+    // Earnings
+    earnings: {
+      getSummary: async () => {
+        return axiosInstance.get<any>('/api/v1/provider/earnings/summary');
+      },
+      getDetails: async (params?: { limit?: number; offset?: number }) => {
+        return axiosInstance.get<any[]>('/api/v1/provider/earnings/details', { params });
+      },
+      getPayments: async () => {
+        return axiosInstance.get<any[]>('/api/v1/provider/earnings/payments');
+      },
+      requestWithdrawal: async (amount: number) => {
+        return axiosInstance.post<any>('/api/v1/provider/earnings/withdraw', { amount });
+      },
+    },
+    // Messages
+    messages: {
+      getAll: async () => {
+        return axiosInstance.get<any[]>('/api/v1/provider/messages/');
+      },
+      send: async (data: any) => {
+        return axiosInstance.post<any>('/api/v1/provider/messages/', data);
+      },
+    },
+  };
+
+  // Wedding Planning API
+  wedding = {
+    create: async (data: any) => {
+      const payload: any = {
+        couple_name: data.couple_name,
+        wedding_date: data.wedding_date
+      };
+      if (data.venue) payload.venue = data.venue;
+      if (data.guest_count) payload.guest_count = parseInt(data.guest_count);
+      if (data.budget) payload.budget = parseFloat(data.budget);
+      if (data.spent) payload.spent = parseFloat(data.spent);
+      return axiosInstance.post<any>('/api/v1/wedding', payload);
+    },
+    getMy: async () => {
+      return axiosInstance.get<any>('/api/v1/wedding/me');
+    },
+    update: async (data: any) => {
+      return axiosInstance.put<any>('/api/v1/wedding/me', data);
+    },
+  };
+
+  // Wedding Tasks API
+  tasks = {
+    getAll: async () => {
+      return axiosInstance.get<any[]>('/api/v1/tasks');
+    },
+    create: async (data: any) => {
+      return axiosInstance.post<any>('/api/v1/tasks', data);
+    },
+    update: async (id: string, data: any) => {
+      return axiosInstance.put<any>(`/api/v1/tasks/${id}`, data);
+    },
+    delete: async (id: string) => {
+      return axiosInstance.delete(`/api/v1/tasks/${id}`);
+    },
+  };
+
+  // User Verification API
+  verification = {
+    submit: async (rdbFile: File, nidFile: File, faceFile: File) => {
+      const formData = new FormData();
+      formData.append('rdbFile', rdbFile);
+      formData.append('nidFile', nidFile);
+      formData.append('faceFile', faceFile);
+      return axiosInstance.post<any>('/api/v1/user/verify', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
     },
   };
 
@@ -209,6 +441,15 @@ class ApiClient {
     stats: {
       get: async () => {
         return axiosInstance.get<any>('/api/v1/admin/stats');
+      },
+      getRecentActivity: async (limit?: number) => {
+        return axiosInstance.get<any[]>('/api/v1/admin/recent-activity', { params: { limit } });
+      },
+      getRevenueAnalytics: async (period?: string) => {
+        return axiosInstance.get<any[]>('/api/v1/admin/analytics/revenue', { params: { period } });
+      },
+      getUserAnalytics: async () => {
+        return axiosInstance.get<any[]>('/api/v1/admin/analytics/users');
       },
     },
     users: {
@@ -229,6 +470,18 @@ class ApiClient {
       },
       delete: async (id: string) => {
         return axiosInstance.delete(`/api/v1/admin/users/${id}`);
+      },
+      approve: async (id: string, notes?: string) => {
+        return axiosInstance.put<any>(`/api/v1/auth/users/${id}/approve`, { admin_notes: notes });
+      },
+      reject: async (id: string, notes?: string) => {
+        return axiosInstance.put<any>(`/api/v1/auth/users/${id}/reject`, { admin_notes: notes });
+      },
+      getVerification: async (id: string) => {
+        return axiosInstance.get<any>(`/api/v1/auth/users/${id}/verification`);
+      },
+      getPendingVerifications: async () => {
+        return axiosInstance.get<any[]>('/api/v1/auth/verifications/pending');
       },
     },
     providers: {
@@ -253,7 +506,41 @@ class ApiClient {
       activate: async (id: string) => {
         return axiosInstance.put<any>(`/api/v1/admin/providers/${id}/activate`);
       },
-    }
+    },
+    bookings: {
+      getAll: async (params?: { page?: number; limit?: number; status?: string; date_from?: string; date_to?: string }) => {
+        return axiosInstance.get<any>('/api/v1/admin/bookings', { params });
+      },
+      getStats: async () => {
+        return axiosInstance.get<any>('/api/v1/admin/bookings/stats');
+      },
+      cancel: async (id: string, reason: string) => {
+        return axiosInstance.put<any>(`/api/v1/admin/bookings/${id}/cancel`, { reason });
+      },
+    },
+    disputes: {
+      getAll: async (params?: { status?: string; priority?: string; page?: number; limit?: number }) => {
+        return axiosInstance.get<any>('/api/v1/admin/disputes', { params });
+      },
+      getStats: async () => {
+        return axiosInstance.get<any>('/api/v1/admin/disputes/stats');
+      },
+      getDetails: async (id: string) => {
+        return axiosInstance.get<any>(`/api/v1/admin/disputes/${id}`);
+      },
+      investigate: async (id: string, notes?: string) => {
+        return axiosInstance.put<any>(`/api/v1/admin/disputes/${id}/investigate`, { notes });
+      },
+      resolve: async (id: string, resolutionType: string, notes?: string) => {
+        return axiosInstance.put<any>(`/api/v1/admin/disputes/${id}/resolve`, { resolution_type: resolutionType, resolution_notes: notes });
+      },
+      reject: async (id: string, reason: string) => {
+        return axiosInstance.put<any>(`/api/v1/admin/disputes/${id}/reject`, { reason });
+      },
+      sendMessage: async (id: string, message: string, attachmentUrls?: string[]) => {
+        return axiosInstance.post<any>(`/api/v1/admin/disputes/${id}/message`, { message, attachment_urls: attachmentUrls });
+      },
+    },
   };
 }
 

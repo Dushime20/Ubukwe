@@ -7,6 +7,8 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { MenuIcon, XIcon } from "lucide-react";
 import { Button } from "./button";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { TranslatedText } from "@/components/translated-text";
 
 export function Navbar() {
   const isMobile = useIsMobile();
@@ -37,29 +39,30 @@ export function Navbar() {
             <NavigationMenuList className="flex space-x-4">
               <NavigationMenuItem>
                 <a href="/" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Home
+                  <TranslatedText text="Home" />
                 </a>
               </NavigationMenuItem>
               <NavigationMenuItem>
                 
                 <a href="/services" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Services
+                  <TranslatedText text="Services" />
                 </a>
               </NavigationMenuItem>
               
               <NavigationMenuItem>
                 <a href="/about" className="text-muted-foreground hover:text-foreground transition-colors">
-                  About
+                  <TranslatedText text="About" />
                 </a>
               </NavigationMenuItem>
                <div className="flex items-center space-x-3">
+              <LanguageSwitcher />
               <Link href="/auth/signin">
                 <Button variant="ghost" size="sm">
-                  Sign In
+                  <TranslatedText text="Sign In" />
                 </Button>
               </Link>
               <Link href="/auth/signup">
-                <Button size="sm">Get Started</Button>
+                <Button size="sm"><TranslatedText text="Get Started" /></Button>
               </Link>
             </div>
             </NavigationMenuList>
@@ -69,20 +72,21 @@ export function Navbar() {
       {isMobile && menuOpen && (
         <nav className="flex flex-row items-center justify-start space-x-4 mt-2 px-4 py-2 overflow-x-auto">
           <a href="/" className="text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap">
-            Home
+            <TranslatedText text="Home" />
           </a>
           <a href="/services" className="text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap">
-            Services
+            <TranslatedText text="Services" />
           </a>
           <a href="/about" className="text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap">
-            About
+            <TranslatedText text="About" />
           </a>
           <Link href="/auth/signin" className="text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap">
-            Sign In
+            <TranslatedText text="Sign In" />
           </Link>
           <Link href="/auth/signup" className="text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap">
-            Register
+            <TranslatedText text="Register" />
           </Link>
+          <LanguageSwitcher />
         </nav>
       )}
     </header>
