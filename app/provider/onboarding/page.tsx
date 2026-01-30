@@ -1,13 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Upload, FileText, CheckCircle, AlertCircle, ArrowRight, AlertTriangle } from "lucide-react"
+import { Upload, FileText, CheckCircle, AlertCircle, ArrowRight, AlertTriangle, Camera, X } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { apiClient } from "@/lib/api-client"
 import { useRouter } from "next/navigation"
@@ -21,12 +21,18 @@ import {
   validateStep5,
   ValidationError,
 } from "@/lib/validation/onboarding-schema"
+import { useRef } from "react"
 
 export default function ProviderOnboarding() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [stepErrors, setStepErrors] = useState<ValidationError[]>([])
+  const [cameraActive, setCameraActive] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+
   const [formData, setFormData] = useState({
     businessName: "",
     businessType: "",
@@ -57,6 +63,90 @@ export default function ProviderOnboarding() {
     { id: 5, title: "Business Documents", completed: currentStep > 5 },
     { id: 6, title: "Review & Submit", completed: false },
   ]
+
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop())
+      }
+    }
+  }, [])
+
+  /* ---------------- CAMERA (FIXED) ---------------- */
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "user",
+          width: { ideal: 400 },
+          height: { ideal: 400 },
+        },
+        audio: false,
+      })
+
+      streamRef.current = stream
+      setCameraActive(true)
+
+
+      // wait for video element to mount
+      setTimeout(async () => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+          videoRef.current.onloadedmetadata = async () => {
+            await videoRef.current?.play()
+          }
+        }
+      }, 100)
+    } catch (error) {
+      console.error(error)
+      toast.error("Unable to access camera. Please allow camera permission.")
+    }
+  }
+
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop())
+      streamRef.current = null
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null
+    }
+    setCameraActive(false)
+  }
+
+
+  const captureSelfie = () => {
+    if (!videoRef.current || !canvasRef.current) return
+    const ctx = canvasRef.current.getContext("2d")
+    if (!ctx) return
+
+
+    canvasRef.current.width = videoRef.current.videoWidth
+    canvasRef.current.height = videoRef.current.videoHeight
+    ctx.drawImage(videoRef.current, 0, 0)
+
+
+    canvasRef.current.toBlob(
+      (blob) => {
+        if (!blob) {
+          toast.error("Failed to capture selfie")
+          return
+        }
+        const file = new File([blob], "selfie.jpg", { type: "image/jpeg" })
+        setDocuments((p) => ({ ...p, selfiePhoto: file }))
+        stopCamera()
+        toast.success("Selfie captured successfully")
+      },
+      "image/jpeg",
+      0.95
+    )
+  }
+
+
+  useEffect(() => {
+    return () => stopCamera()
+  }, [])
 
   const handleInputChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -127,13 +217,40 @@ export default function ProviderOnboarding() {
     return true
   }
 
-  const handleNext = () => {
-    if (validateCurrentStep() && currentStep < 6) {
+  const handleNext = async () => {
+    if (!validateCurrentStep()) return
+
+    if (currentStep === 4) {
+      setIsSubmitting(true)
+      try {
+        if (!documents.idDocument || !documents.selfiePhoto) {
+          throw new Error("Missing ID document or selfie photo.")
+        }
+
+        const docResponse = await apiClient.provider.submitDocuments(
+          documents.idDocument,
+          documents.selfiePhoto
+        )
+
+        if (!docResponse.data.face_match) {
+          throw new Error(docResponse.data.detail || "Face does not match NID. Please re-take your selfie.")
+        }
+
+        toast.success("Identity verified successfully!")
+        setCurrentStep(5)
+      } catch (error: any) {
+        console.error("Verification failed:", error)
+        toast.error(error.message || "Identity verification failed. Please try again.")
+      } finally {
+        setIsSubmitting(false)
+      }
+    } else if (currentStep < 6) {
       setCurrentStep(currentStep + 1)
     }
   }
 
   const handlePrev = () => {
+    if (isSubmitting) return
     setStepErrors([])
     if (currentStep > 1) setCurrentStep(currentStep - 1)
   }
@@ -144,40 +261,31 @@ export default function ProviderOnboarding() {
     }
     setIsSubmitting(true)
     try {
-      // 1. Upload Documents first
-      await apiClient.provider.uploadDocuments(
-        documents.businessLicense || undefined,
-        documents.portfolio.length > 0 ? documents.portfolio : undefined,
-        documents.idDocument || undefined,
-        documents.selfiePhoto || undefined
-      )
+      // 2. Submit Business Onboarding Information
+      if (!documents.businessLicense) {
+        throw new Error("Missing business license (RDB file)")
+      }
 
-      // 2. Register Team / Complete Onboarding
-      const registrationData = {
-        business_name: formData.businessName,
-        business_type: formData.businessType,
-        years_experience: parseInt(formData.yearsExperience) || 0,
-        business_description: formData.description,
-        service_categories: formData.serviceCategories,
+      const onboardingData = {
+        businessName: formData.businessName,
+        businessType: formData.businessType,
+        yearsExperience: parseInt(formData.yearsExperience) || 0,
+        serviceCategories: formData.serviceCategories,
+        description: formData.description,
+        phone: formData.phone,
+        email: formData.email,
         address: formData.address,
         city: formData.city,
         country: formData.country,
-        phone_number: formData.phone,
-        email: formData.email,
-        location: `${formData.city}, ${formData.country}`,
-        // Backend required fields for register-team
-        price_per_session: 0, // Default or placeholder
-        currency: "RWF",
-        team_size: 1,
       }
 
-      await apiClient.provider.registerTeam(registrationData)
+      await apiClient.provider.submitOnboarding(onboardingData, documents.businessLicense)
 
-      toast.success("Onboarding completed successfully!")
+      toast.success("Onboarding data submitted successfully!")
       router.push("/provider/dashboard")
     } catch (error: any) {
-      console.error("Onboarding failed:", error)
-      toast.error(error.message || "Failed to complete onboarding. Please try again.")
+      console.error("Submission failed:", error)
+      toast.error(error.message || "Failed to submit onboarding data. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
@@ -187,6 +295,45 @@ export default function ProviderOnboarding() {
 
   return (
     <div className="min-h-screen bg-[#f9fafc] py-8 px-4">
+      {cameraActive && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center flex-col gap-4">
+          <button
+            onClick={stopCamera}
+            className="absolute top-4 right-4 z-20 bg-white/20 hover:bg-white/30 rounded-full p-2 transition-colors"
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-96 h-96 object-cover rounded-lg"
+          />
+
+          <canvas ref={canvasRef} className="hidden" />
+          <div className="flex gap-2 p-4 mt-4">
+            <Button
+              type="button"
+              onClick={captureSelfie}
+              className="flex-1 bg-teal-600 hover:bg-teal-700 text-white"
+            >
+              <Camera className="w-4 h-4 mr-2" />
+              Capture
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={stopCamera}
+              className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/30"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <Link href="/" className="text-muted-foreground hover:text-foreground text-sm flex items-center gap-2">
@@ -196,7 +343,6 @@ export default function ProviderOnboarding() {
           <p className="text-muted-foreground mt-2">Complete your profile to start offering services</p>
         </div>
 
-        {/* Progress Steps */}
         <div className="mb-8">
           <Progress value={progress} className="mb-4" />
           <div className="flex justify-between">
@@ -244,7 +390,6 @@ export default function ProviderOnboarding() {
               </div>
             )}
 
-            {/* Step 1: Business Information */}
             {currentStep === 1 && (
               <div className="space-y-4">
                 <div>
@@ -254,112 +399,67 @@ export default function ProviderOnboarding() {
                     value={formData.businessName}
                     onChange={(e) => handleInputChange("businessName", e.target.value)}
                     placeholder="Enter your business name"
-                    className={stepErrors.some(e => e.field === "businessName") ? "border-red-500" : ""}
+                    className={stepErrors.some((e) => e.field === "businessName") ? "border-red-500" : ""}
                   />
-                  {stepErrors.some(e => e.field === "businessName") && (
-                    <p className="text-sm text-red-600 mt-1">{stepErrors.find(e => e.field === "businessName")?.message}</p>
+                  {stepErrors.some((e) => e.field === "businessName") && (
+                    <p className="text-sm text-red-600 mt-1">{stepErrors.find((e) => e.field === "businessName")?.message}</p>
                   )}
                 </div>
-                <div>
-                  <Label htmlFor="businessType">Business Type *</Label>
-                  <Select value={formData.businessType} onValueChange={(value) => handleInputChange("businessType", value)}>
-                    <SelectTrigger className={stepErrors.some(e => e.field === "businessType") ? "border-red-500" : ""}>
-                      <SelectValue placeholder="Select business type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sole-proprietor">Sole Proprietor</SelectItem>
-                      <SelectItem value="partnership">Partnership</SelectItem>
-                      <SelectItem value="llc">Limited Liability Company (LLC)</SelectItem>
-                      <SelectItem value="corporation">Corporation</SelectItem>
-                      <SelectItem value="individual">Individual/Freelancer</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {stepErrors.some(e => e.field === "businessType") && (
-                    <p className="text-sm text-red-600 mt-1">{stepErrors.find(e => e.field === "businessType")?.message}</p>
-                  )}
-                </div>
-                <div>
-                  <Label htmlFor="yearsExperience">Years of Experience *</Label>
-                  <Select
-                    value={formData.yearsExperience}
-                    onValueChange={(value) => handleInputChange("yearsExperience", value)}
-                  >
-                    <SelectTrigger className={stepErrors.some(e => e.field === "yearsExperience") ? "border-red-500" : ""}>
-                      <SelectValue placeholder="Select experience level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0-1">0-1 years</SelectItem>
-                      <SelectItem value="2-5">2-5 years</SelectItem>
-                      <SelectItem value="6-10">6-10 years</SelectItem>
-                      <SelectItem value="11+">11+ years</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {stepErrors.some(e => e.field === "yearsExperience") && (
-                    <p className="text-sm text-red-600 mt-1">{stepErrors.find(e => e.field === "yearsExperience")?.message}</p>
-                  )}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="businessType">Business Type *</Label>
+                    <Select value={formData.businessType} onValueChange={(value) => handleInputChange("businessType", value)}>
+                      <SelectTrigger className={stepErrors.some((e) => e.field === "businessType") ? "border-red-500" : ""}>
+                        <SelectValue placeholder="Select business type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sole-proprietor">Sole Proprietor</SelectItem>
+                        <SelectItem value="partnership">Partnership</SelectItem>
+                        <SelectItem value="llc">Limited Liability Company (LLC)</SelectItem>
+                        <SelectItem value="corporation">Corporation</SelectItem>
+                        <SelectItem value="individual">Individual/Freelancer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="yearsExperience">Years of Experience *</Label>
+                    <Select value={formData.yearsExperience} onValueChange={(value) => handleInputChange("yearsExperience", value)}>
+                      <SelectTrigger className={stepErrors.some((e) => e.field === "yearsExperience") ? "border-red-500" : ""}>
+                        <SelectValue placeholder="Select experience level" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0-1">0-1 years</SelectItem>
+                        <SelectItem value="2-5">2-5 years</SelectItem>
+                        <SelectItem value="6-10">6-10 years</SelectItem>
+                        <SelectItem value="11+">11+ years</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Step 2: Service Details */}
             {currentStep === 2 && (
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="serviceCategories">Service Categories *</Label>
                   <p className="text-sm text-muted-foreground mb-2">Select at least one category</p>
-                  {stepErrors.some(e => e.field === "serviceCategories") && (
-                    <p className="text-sm text-red-600 mb-2">{stepErrors.find(e => e.field === "serviceCategories")?.message}</p>
-                  )}
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {["Photography", "Venue", "Catering", "Music", "Decoration", "Transportation", "MC Services", "Dance", "Other", ...formData.serviceCategories.filter(cat => !["Photography", "Venue", "Catering", "Music", "Decoration", "Transportation", "MC Services", "Dance", "Other"].includes(cat))].map(
-                      (cat) => (
-                        <Button
-                          key={cat}
-                          type="button"
-                          variant={formData.serviceCategories.includes(cat) ? "default" : "outline"}
-                          onClick={() => {
-                            const categories = formData.serviceCategories.includes(cat)
-                              ? formData.serviceCategories.filter((c) => c !== cat)
-                              : [...formData.serviceCategories, cat]
-                            handleInputChange("serviceCategories", categories)
-                          }}
-                        >
-                          {cat}
-                        </Button>
-                      )
-                    )}
-                  </div>
-                  <div className="mt-3">
-                    <Label htmlFor="customCategory">Custom Category</Label>
-                    <div className="flex gap-2 mt-1">
-                      <Input
-                        id="customCategory"
-                        placeholder="Enter custom category"
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter') {
-                            const value = e.currentTarget.value.trim()
-                            if (value && !formData.serviceCategories.includes(value)) {
-                              handleInputChange("serviceCategories", [...formData.serviceCategories, value])
-                              e.currentTarget.value = ''
-                            }
-                          }
-                        }}
-                      />
+                    {["Photography", "Venue", "Catering", "Music", "Decoration", "Transportation", "MC Services", "Dance", "Other"].map((cat) => (
                       <Button
+                        key={cat}
                         type="button"
-                        variant="outline"
-                        onClick={(e) => {
-                          const input = e.currentTarget.previousElementSibling as HTMLInputElement
-                          const value = input.value.trim()
-                          if (value && !formData.serviceCategories.includes(value)) {
-                            handleInputChange("serviceCategories", [...formData.serviceCategories, value])
-                            input.value = ''
-                          }
+                        variant={formData.serviceCategories.includes(cat) ? "default" : "outline"}
+                        onClick={() => {
+                          const categories = formData.serviceCategories.includes(cat)
+                            ? formData.serviceCategories.filter((c) => c !== cat)
+                            : [...formData.serviceCategories, cat]
+                          handleInputChange("serviceCategories", categories)
                         }}
                       >
-                        Add
+                        {cat}
                       </Button>
-                    </div>
+                    ))}
                   </div>
                 </div>
                 <div>
@@ -370,19 +470,13 @@ export default function ProviderOnboarding() {
                     onChange={(e) => handleInputChange("description", e.target.value)}
                     placeholder="Describe your services, experience, and what makes you unique..."
                     rows={6}
-                    className={stepErrors.some(e => e.field === "description") ? "border-red-500" : ""}
+                    className={stepErrors.some((e) => e.field === "description") ? "border-red-500" : ""}
                   />
-                  <div className="flex justify-between items-center mt-1">
-                    <p className="text-xs text-muted-foreground">{formData.description.length}/500 characters</p>
-                    {stepErrors.some(e => e.field === "description") && (
-                      <p className="text-sm text-red-600">{stepErrors.find(e => e.field === "description")?.message}</p>
-                    )}
-                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">{formData.description.length}/500 characters</p>
                 </div>
               </div>
             )}
 
-            {/* Step 3: Contact Information */}
             {currentStep === 3 && (
               <div className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
@@ -394,11 +488,7 @@ export default function ProviderOnboarding() {
                       value={formData.phone}
                       onChange={(e) => handleInputChange("phone", e.target.value)}
                       placeholder="+250 XXX XXX XXX"
-                      className={stepErrors.some(e => e.field === "phone") ? "border-red-500" : ""}
                     />
-                    {stepErrors.some(e => e.field === "phone") && (
-                      <p className="text-sm text-red-600 mt-1">{stepErrors.find(e => e.field === "phone")?.message}</p>
-                    )}
                   </div>
                   <div>
                     <Label htmlFor="email">Email Address *</Label>
@@ -408,11 +498,7 @@ export default function ProviderOnboarding() {
                       value={formData.email}
                       onChange={(e) => handleInputChange("email", e.target.value)}
                       placeholder="your@email.com"
-                      className={stepErrors.some(e => e.field === "email") ? "border-red-500" : ""}
                     />
-                    {stepErrors.some(e => e.field === "email") && (
-                      <p className="text-sm text-red-600 mt-1">{stepErrors.find(e => e.field === "email")?.message}</p>
-                    )}
                   </div>
                 </div>
                 <div>
@@ -422,11 +508,7 @@ export default function ProviderOnboarding() {
                     value={formData.address}
                     onChange={(e) => handleInputChange("address", e.target.value)}
                     placeholder="Enter your business address"
-                    className={stepErrors.some(e => e.field === "address") ? "border-red-500" : ""}
                   />
-                  {stepErrors.some(e => e.field === "address") && (
-                    <p className="text-sm text-red-600 mt-1">{stepErrors.find(e => e.field === "address")?.message}</p>
-                  )}
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
@@ -436,16 +518,12 @@ export default function ProviderOnboarding() {
                       value={formData.city}
                       onChange={(e) => handleInputChange("city", e.target.value)}
                       placeholder="City"
-                      className={stepErrors.some(e => e.field === "city") ? "border-red-500" : ""}
                     />
-                    {stepErrors.some(e => e.field === "city") && (
-                      <p className="text-sm text-red-600 mt-1">{stepErrors.find(e => e.field === "city")?.message}</p>
-                    )}
                   </div>
                   <div>
                     <Label htmlFor="country">Country *</Label>
                     <Select value={formData.country} onValueChange={(value) => handleInputChange("country", value)}>
-                      <SelectTrigger className={stepErrors.some(e => e.field === "country") ? "border-red-500" : ""}>
+                      <SelectTrigger>
                         <SelectValue placeholder="Select country" />
                       </SelectTrigger>
                       <SelectContent>
@@ -455,27 +533,22 @@ export default function ProviderOnboarding() {
                         <SelectItem value="tanzania">Tanzania</SelectItem>
                       </SelectContent>
                     </Select>
-                    {stepErrors.some(e => e.field === "country") && (
-                      <p className="text-sm text-red-600 mt-1">{stepErrors.find(e => e.field === "country")?.message}</p>
-                    )}
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Step 4: Identity Verification */}
             {currentStep === 4 && (
               <div className="space-y-6">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-sm text-blue-900">
-                    <strong>Identity Verification:</strong> Please upload both your National ID and a clear selfie photo. These will be used to verify your identity.
+                    <strong>Identity Verification:</strong> Please upload both your National ID and a clear selfie photo.
                   </p>
                 </div>
-                
+
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <Label>National ID Document *</Label>
-                    <p className="text-sm text-muted-foreground mb-2">Upload a clear photo of your National ID</p>
                     <div className="border-2 border-dashed rounded-lg p-6 text-center">
                       <input
                         type="file"
@@ -487,7 +560,6 @@ export default function ProviderOnboarding() {
                       <label htmlFor="idDocument" className="cursor-pointer">
                         <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
                         <p className="text-sm font-medium">Click to upload National ID</p>
-                        <p className="text-xs text-muted-foreground">PNG, JPG up to 5MB</p>
                       </label>
                       {documents.idDocument && (
                         <div className="mt-2 flex items-center justify-center gap-2 text-sm">
@@ -500,39 +572,30 @@ export default function ProviderOnboarding() {
 
                   <div>
                     <Label>Selfie Photo *</Label>
-                    <p className="text-sm text-muted-foreground mb-2">Take a clear selfie for identity verification</p>
-                    <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                      <input
-                        type="file"
-                        id="selfiePhoto"
-                        accept="image/*"
-                        capture="user"
-                        onChange={(e) => handleFileUpload("selfiePhoto", e.target.files)}
-                        className="hidden"
-                      />
-                      <label htmlFor="selfiePhoto" className="cursor-pointer">
-                        <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-sm font-medium">Click to take selfie</p>
-                        <p className="text-xs text-muted-foreground">PNG, JPG up to 5MB</p>
-                      </label>
-                      {documents.selfiePhoto && (
-                        <div className="mt-2 flex items-center justify-center gap-2 text-sm">
-                          <FileText className="w-4 h-4" />
-                          {documents.selfiePhoto.name}
-                        </div>
-                      )}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={startCamera}
+                      className="w-full border-2 border-dashed rounded-lg p-6 text-center hover:border-teal-400 transition-colors"
+                    >
+                      <Camera className="w-12 h-12 mx-auto mb-3 text-teal-600" />
+                      <p className="text-sm font-medium">Click to take selfie</p>
+                    </button>
+
+                    {documents.selfiePhoto && (
+                      <div className="mt-4 flex items-center justify-center gap-2 text-sm text-green-600">
+                        <CheckCircle className="w-4 h-4" />
+                        Selfie captured
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Step 5: Business Documents */}
             {currentStep === 5 && (
               <div className="space-y-6">
                 <div>
                   <Label>Business License / Registration *</Label>
-                  <p className="text-sm text-muted-foreground mb-2">Upload your business registration document</p>
                   <div className="border-2 border-dashed rounded-lg p-6 text-center">
                     <input
                       type="file"
@@ -543,8 +606,7 @@ export default function ProviderOnboarding() {
                     />
                     <label htmlFor="businessLicense" className="cursor-pointer">
                       <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-sm font-medium">Click to upload or drag and drop</p>
-                      <p className="text-xs text-muted-foreground">PNG, JPG, PDF up to 5MB</p>
+                      <p className="text-sm font-medium">Click to upload</p>
                     </label>
                     {documents.businessLicense && (
                       <div className="mt-2 flex items-center justify-center gap-2 text-sm">
@@ -555,110 +617,33 @@ export default function ProviderOnboarding() {
                   </div>
                 </div>
 
-                <div>
-                  <Label>Portfolio / Work Samples *</Label>
-                  <p className="text-sm text-muted-foreground mb-2">Upload photos or documents showcasing your work (minimum 3)</p>
-                  <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                    <input
-                      type="file"
-                      id="portfolio"
-                      accept="image/*,.pdf"
-                      multiple
-                      onChange={(e) => handleFileUpload("portfolio", e.target.files)}
-                      className="hidden"
-                    />
-                    <label htmlFor="portfolio" className="cursor-pointer">
-                      <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-sm font-medium">Click to upload or drag and drop</p>
-                      <p className="text-xs text-muted-foreground">Multiple files accepted</p>
-                    </label>
-                    {documents.portfolio.length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        {documents.portfolio.map((file, idx) => (
-                          <div key={idx} className="flex items-center justify-center gap-2 text-sm">
-                            <FileText className="w-4 h-4" />
-                            {file.name}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
+
               </div>
             )}
 
-            {/* Step 6: Review & Submit */}
             {currentStep === 6 && (
               <div className="space-y-6">
-                <div className="bg-muted/50 p-4 rounded-lg space-y-3">
-                  <h3 className="font-semibold">Business Information</h3>
-                  <div className="grid md:grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Name:</span> <span className="ml-2">{formData.businessName}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Type:</span> <span className="ml-2">{formData.businessType}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Experience:</span> <span className="ml-2">{formData.yearsExperience} years</span>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="bg-muted/50 p-4 rounded-lg">
-                  <h3 className="font-semibold mb-2">Service Categories</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.serviceCategories.map((cat) => (
-                      <span key={cat} className="px-2 py-1 bg-primary/10 text-primary rounded text-sm">
-                        {cat}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <h3 className="font-semibold mb-2">Contact Information</h3>
-                  <div className="grid md:grid-cols-2 gap-2 text-sm">
+                  <h3 className="font-semibold mb-3">Review Your Information</h3>
+                  <div className="space-y-2 text-sm">
                     <div>
-                      <span className="text-muted-foreground">Phone:</span> <span className="ml-2">{formData.phone}</span>
+                      <span className="text-muted-foreground">Business:</span> {formData.businessName}
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Email:</span> <span className="ml-2">{formData.email}</span>
+                      <span className="text-muted-foreground">Type:</span> {formData.businessType}
                     </div>
-                    <div className="col-span-2">
-                      <span className="text-muted-foreground">Address:</span>{" "}
-                      <span className="ml-2">
-                        {formData.address}, {formData.city}, {formData.country}
-                      </span>
+                    <div>
+                      <span className="text-muted-foreground">Experience:</span> {formData.yearsExperience}
                     </div>
-                  </div>
-                </div>
-
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <h3 className="font-semibold mb-2">Documents</h3>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex items-center gap-2">
-                      {documents.idDocument ? <CheckCircle className="w-4 h-4 text-green-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
-                      National ID {documents.idDocument ? "Uploaded" : "Missing"}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {documents.selfiePhoto ? <CheckCircle className="w-4 h-4 text-green-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
-                      Selfie Photo {documents.selfiePhoto ? "Uploaded" : "Missing"}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {documents.businessLicense ? <CheckCircle className="w-4 h-4 text-green-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
-                      Business License {documents.businessLicense ? "Uploaded" : "Missing"}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {documents.portfolio.length >= 3 ? <CheckCircle className="w-4 h-4 text-green-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
-                      Portfolio ({documents.portfolio.length}/3+)
+                    <div>
+                      <span className="text-muted-foreground">Contact:</span> {formData.phone} | {formData.email}
                     </div>
                   </div>
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-sm text-blue-900">
-                    <strong>Note:</strong> Your application will be reviewed within 2-3 business days. You'll receive an email notification once your account has been approved or if additional information is needed.
+                    <strong>Note:</strong> Your application will be reviewed within 2-3 business days.
                   </p>
                 </div>
               </div>
@@ -669,8 +654,9 @@ export default function ProviderOnboarding() {
                 Previous
               </Button>
               {currentStep < 6 ? (
-                <Button onClick={handleNext}>
-                  Next Step <ArrowRight className="w-4 h-4 ml-2" />
+                <Button onClick={handleNext} disabled={isSubmitting}>
+                  {isSubmitting ? "Verifying..." : currentStep === 4 ? "Verify Identity" : "Next Step"}
+                  {currentStep !== 4 && <ArrowRight className="w-4 h-4 ml-2" />}
                 </Button>
               ) : (
                 <Button onClick={handleSubmit} disabled={isSubmitting}>
@@ -684,4 +670,3 @@ export default function ProviderOnboarding() {
     </div>
   )
 }
-

@@ -252,7 +252,7 @@ export function WeddingTasks() {
                                         >
                                             <div className="flex items-center space-x-3 flex-1">
                                                 <Checkbox
-                                                    className="border-2 border-gray-500 data-[state=checked]:border-primary data-[state=checked]:bg-primary"
+                                                className="border-2 border-gray-950"
                                                     checked={task.is_completed}
                                                     onCheckedChange={() => handleToggle(task)}
                                                 />
@@ -295,7 +295,7 @@ export function WeddingTasks() {
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
                                                     onClick={() => deleteMutation.mutate(task.id)}
                                                 >
                                                     <Trash2 className="h-4 w-4" />

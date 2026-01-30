@@ -280,6 +280,31 @@ class ApiClient {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
     },
+    submitDocuments: async (nidFile: File, faceFile: File) => {
+      const formData = new FormData();
+      formData.append('nid_file', nidFile);
+      formData.append('face_file', faceFile);
+      return axiosInstance.post<any>('/api/v1/provider/documents', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+    },
+    submitOnboarding: async (data: any, rdbFile: File) => {
+      const formData = new FormData();
+      // Append fields from data object
+      Object.keys(data).forEach(key => {
+        if (Array.isArray(data[key])) {
+          formData.append(key, JSON.stringify(data[key]));
+        } else {
+          formData.append(key, data[key]);
+        }
+      });
+      // Append file
+      formData.append('rdb_file', rdbFile);
+
+      return axiosInstance.post<any>('/api/v1/provider/onboarding', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+    },
     // Quotes
     quotes: {
       getAll: async (params?: { status?: string }) => {
@@ -486,7 +511,8 @@ class ApiClient {
     },
     providers: {
       getAll: async (status?: string) => {
-        return axiosInstance.get<any[]>('/api/v1/admin/providers', { params: { status } });
+        const params = status ? { status } : {};
+        return axiosInstance.get<any[]>('/api/v1/admin/providers', { params });
       },
       getPending: async () => {
         return axiosInstance.get<any[]>('/api/v1/admin/providers/pending');

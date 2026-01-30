@@ -70,7 +70,7 @@ export const validateServiceCategories = (categories: string[]): ValidationError
   if (categories.length > 10) {
     return { field: "serviceCategories", message: "Maximum 10 service categories allowed" }
   }
-  
+
   const validCategories = ["Photography", "Venue", "Catering", "Music", "Decoration", "Transportation", "MC Services", "Dance", "Other"]
   for (const cat of categories) {
     if (cat.length > 50) {
@@ -113,12 +113,12 @@ export const validatePhone = (phone: string, country: string): ValidationError |
   if (!phone || phone.trim().length === 0) {
     return { field: "phone", message: "Phone number is required" }
   }
-  
+
   const pattern = PHONE_PATTERNS[country]
   if (!pattern) {
     return { field: "phone", message: "Country not supported for phone validation" }
   }
-  
+
   const cleanPhone = phone.replace(/\s/g, "")
   if (!pattern.test(cleanPhone)) {
     return { field: "phone", message: `Invalid phone number for ${country}. Expected format: +250 XXX XXX XXX` }
@@ -307,8 +307,7 @@ export const validateStep5 = (documents: {
   const licenseError = validateFile(documents.businessLicense, "Business License", 5, ["image/jpeg", "image/png", "application/pdf"])
   if (licenseError) errors.push(licenseError)
 
-  const portfolioError = validatePortfolio(documents.portfolio)
-  if (portfolioError) errors.push(portfolioError)
+  // Portfolio is now optional or removed from this step
 
   return {
     isValid: errors.length === 0,

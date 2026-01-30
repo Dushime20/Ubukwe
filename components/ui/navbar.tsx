@@ -19,7 +19,7 @@ export function Navbar() {
   };
 
   return (
-    <header className="border-b bg-[#eff4fa]   z-10 top-0 sticky">
+    <header className="w-full bg-white z-50 top-0 fixed">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <div className="h-12 w-12 rounded-full">
